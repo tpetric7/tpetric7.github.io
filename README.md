@@ -2,12 +2,12 @@
 
 # OLS Regression
 
-```r
+``` r
 m <- lm(frequency ~ gender + attitude, data=polite)
 summary(m)
 ```
 
-```r
+``` r
 library(effects)
 allEffects(m)
 plot(allEffects(m), multiline=TRUE, grid=TRUE, rug=FALSE, as.table=TRUE)
@@ -16,4 +16,3 @@ plot(allEffects(m), multiline=TRUE, grid=TRUE, rug=FALSE, as.table=TRUE)
 ![Plot 1](pictures/politeness_boxplot.jpg)
 
 ![Plot 1](pictures/politeness_lineplot.jpg)
-
