@@ -13,10 +13,7 @@ allEffects(m)
 plot(allEffects(m), multiline=TRUE, grid=TRUE, rug=FALSE, as.table=TRUE)
 ```
 
-```r
-knitr::include_graphics("pictures/politeness_boxplot.jpg")
-```
+![Plot 1](pictures/pictures/politeness_boxplot.jpg)
 
-```r
-knitr::include_graphics("pictures/politeness_lineplot.jpg")
-```
+![Plot 1](pictures/pictures/politeness_lineplot.jpg)
+
