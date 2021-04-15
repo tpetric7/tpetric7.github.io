@@ -1,9 +1,8 @@
-# Politenss data (B. Winter tutorial)
+# Politeness data (B. Winter tutorial)
 
 # LOAD
 rm(list=ls(all=TRUE)) # clear memory
-# polite <- read.csv("c:/Users/Teodor/Documents/R/politeness_data.csv", dec=".")
-polite <- read.csv("d:/Users/teodo/Documents/R/politeness_data.csv", dec=".")
+polite <- read.csv("data/politeness_data.csv", dec=".")
 
 attach(polite)
 
@@ -60,6 +59,14 @@ summary(m)
 library(effects)
 allEffects(m)
 plot(allEffects(m), multiline=TRUE, grid=TRUE, rug=FALSE, as.table=TRUE)
+
+# 1. Open jpeg file
+jpeg("pictures/politeness_lineplot.jpg", 
+     width = 840, height = 535)
+# 2. Create the plot
+plot(allEffects(m), multiline=TRUE, grid=TRUE, rug=FALSE, as.table=TRUE)
+# 3. Close the file
+dev.off()
 
 m <- lm(frequency ~ gender*attitude, data=polite)
 summary(m)
