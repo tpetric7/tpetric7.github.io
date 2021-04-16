@@ -47,12 +47,15 @@ boxplot(frequency ~ attitude*gender,
 # Close the pdf file
 dev.off() 
 
-
+################
 # OLS Regression
+################
 
+# model 1
 m <- lm(frequency ~ gender + attitude + subject + scenario, data=polite)
 summary(m)
 
+# model 2
 m <- lm(frequency ~ gender + attitude, data=polite)
 summary(m)
 
@@ -60,6 +63,7 @@ library(effects)
 allEffects(m)
 plot(allEffects(m), multiline=TRUE, grid=TRUE, rug=FALSE, as.table=TRUE)
 
+# Save plot of the effects to disk
 # 1. Open jpeg file
 jpeg("pictures/politeness_lineplot.jpg", 
      width = 840, height = 535)
@@ -68,6 +72,7 @@ plot(allEffects(m), multiline=TRUE, grid=TRUE, rug=FALSE, as.table=TRUE)
 # 3. Close the file
 dev.off()
 
+# model 3 (with interaction)
 m <- lm(frequency ~ gender*attitude, data=polite)
 summary(m)
 
@@ -75,6 +80,7 @@ library(effects)
 allEffects(m)
 plot(allEffects(m), multiline=TRUE, grid=TRUE, rug=FALSE, as.table=TRUE)
 
+# Save plot of the effects to disk
 # 1. Open jpeg file
 jpeg("pictures/politeness_effects.jpg", 
      width = 840, height = 535)
@@ -90,9 +96,33 @@ plot(allEffects(m), multiline=TRUE, grid=TRUE, rug=FALSE, as.table=TRUE)
 # Close the pdf file
 dev.off() 
 
+# Change of estimates if one datapoint is removed from the model
+(d <- dfbetas(m)
+)
+
+# plot the dfbetas (are there any outliers or data points with high influence?)
+par(mfrow = c(1,3))
+plot(d[,1], col = "orange")
+plot(d[,2], col = "blue")
+plot(d[,3], col = "purple")
+par(mfrow = c(1,1))
+
+# plot diagnostic diagrams
+par(mfrow = c(3,2))
+plot(m, which = 1) # variance of residuals vs. fitted values?
+plot(m, which = 2) # normal distributed residuals?
+plot(m, which = 3) # variance of residuals standardized
+plot(m, which = 4) # Cook's distance (outliers / influencing data points?)
+plot(m, which = 5) # Leverage vs. standardized variance of residuals
+plot(m, which = 6) # Cook's distance vs. Leverage
+par(mfrow = c(1,1))
 
 
+##########################
 # Mixed effects Regression
+##########################
+
+# The variables 'subject' and 'scenario' have been chosen as random effects
 
 library(afex)
 
