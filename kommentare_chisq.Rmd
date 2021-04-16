@@ -53,17 +53,19 @@ Wir verwerfen H0 und nehmen H1 an: zwischen kurzen und langen Kommentaren besteh
 # Graphische Darstellung
 
 ```{r}
-kommentare %>% 
+(kom_lang = kommentare %>% 
   as_tibble() %>% 
   pivot_longer(kurzer_kommentar:ausfuhrlicher_kommentar, 
                names_to = "Kommentar",
                values_to = "Fehler") %>% 
-  mutate(pct = Fehler/sum(Fehler)) %>% 
-ggplot(aes(neugeschriebener_satz, pct, fill = Kommentar)) +
+  mutate(pct = Fehler/sum(Fehler))
+)
+
+kom_lang  %>%  ggplot(aes(Kommentar, pct, fill = neugeschriebener_satz)) +
   geom_col(position = "dodge") +
   scale_y_continuous(labels = percent_format()) +
   labs(x = "Neugeschriebener Satz", y = "",
-       title = "Effizienz kurzer und langer Kommentare")
+       title = "Wirksamkeit kurzer und langer Kommentare")
 
 ```
 

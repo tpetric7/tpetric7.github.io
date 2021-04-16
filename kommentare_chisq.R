@@ -1,14 +1,12 @@
 library(tidyverse)
 library(janitor)
 
-# Datei laden
-
+# Datei laden und die Variablennamen vereinheitlichen
 kommentare = read.delim("data/chisq_kommentare.txt", sep = "\t") %>% 
   clean_names()
 head(kommentare)
 
 # Chi-Quadrat-Test
-
 chisq.test(kommentare[,-1])
 
 # Wir verwerfen H0 und nehmen H1 an: 
