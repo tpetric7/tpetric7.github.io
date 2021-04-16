@@ -1,5 +1,5 @@
 ---
-title: "Plural_subj1"
+title: "Plural von Kunstwörtern"
 author: "Teodor Petrič"
 date: "14 4 2021"
 output: html_document
@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(scales)
 
 ```
 
@@ -31,16 +32,16 @@ head(plural_subj1)
 
 # Povzetek in Hi-kvadrat test
 
-Podatkovni niz preoblikujemo in povzemamo (aggregiramo). 
+Podatkovni niz preoblikujemo in povzemamo (agregacija). 
 Za preizkus ustvarimo tabelo 2 x 2 z opazovanimi pogostnostmi (frekvencami).
 Program izračuna pričakovane pogstnosti in zatem še ocenjuje, ali je razlika med vzorcema statistično značilna.
 
 H0: Preizkusne osebe uporabljajo množinske pripone ne glede na besedni tip (Rhyme / Non-Rhyme).
 H1: Preizkusne osebe uporabljajo množinske pripone z ozirom na besedni tip (Rhyme / Non-Rhyme).
 
-Če je p-vrednost < 0,05 (tj. 5%), potem V tem primeru obvelja H1. Razlika med opazovanimi in pričakovanimi pogostnostmi je statistično značilna (tj. da ni naključna). 
+Če je p-vrednost < 0,05 (tj. 5%), potem obvelja H1: razlika med opazovanimi in pričakovanimi pogostnostmi je statistično značilna (tj. da ni naključna in dovolj velika ob upoštevanju napake). 
 
-Če p > 0,05, potem obdržimo H0. Razlika med opazovanimi pogostnostmi je naključna.
+Če p > 0,05, potem obdržimo H0: razlika med opazovanimi pogostnostmi je naključna.
 
 ```{r}
 # Povzemamo ("aggregate")
