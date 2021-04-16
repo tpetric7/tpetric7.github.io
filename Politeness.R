@@ -51,6 +51,10 @@ dev.off()
 # OLS Regression
 ################
 
+# Inspect relationships between pairs of variables
+library(MASS)
+pairs.panels(polite[c(2,4,5)])
+
 # model 1
 m <- lm(frequency ~ gender + attitude + subject + scenario, data=polite)
 summary(m)
@@ -96,6 +100,16 @@ plot(allEffects(m), multiline=TRUE, grid=TRUE, rug=FALSE, as.table=TRUE)
 # Close the pdf file
 dev.off() 
 
+# plot diagnostic diagrams
+par(mfrow = c(3,2))
+plot(m, which = 1) # variance of residuals vs. fitted values?
+plot(m, which = 2) # normal distributed residuals?
+plot(m, which = 3) # variance of residuals standardized
+plot(m, which = 4) # Cook's distance (outliers / influencing data points?)
+plot(m, which = 5) # Leverage vs. standardized variance of residuals
+plot(m, which = 6) # Cook's distance vs. Leverage
+par(mfrow = c(1,1))
+
 # Change of estimates if one datapoint is removed from the model
 (d <- dfbetas(m)
 )
@@ -105,16 +119,6 @@ par(mfrow = c(1,3))
 plot(d[,1], col = "orange")
 plot(d[,2], col = "blue")
 plot(d[,3], col = "purple")
-par(mfrow = c(1,1))
-
-# plot diagnostic diagrams
-par(mfrow = c(3,2))
-plot(m, which = 1) # variance of residuals vs. fitted values?
-plot(m, which = 2) # normal distributed residuals?
-plot(m, which = 3) # variance of residuals standardized
-plot(m, which = 4) # Cook's distance (outliers / influencing data points?)
-plot(m, which = 5) # Leverage vs. standardized variance of residuals
-plot(m, which = 6) # Cook's distance vs. Leverage
 par(mfrow = c(1,1))
 
 
