@@ -52,8 +52,10 @@ Falls p > 0,05: es gilt H0 (kein Unterschied zwischen Stichproben).
 ## Beobachtete / erwartete Werte
 
 ```{r}
-(tabelle <- as_tibble(cbind(chi$observed, chi$expected)) %>% 
-  rename(En_erwartet = V3, E_erwartet = V4)) # erwartete Werte, wenn H0 richtig ist
+(tabelle <- as_tibble(cbind(chi$observed, chi$expected)) %>%
+   mutate(Wordtyp = unlist(p[,1])) %>% # Spalte wieder hinzufügen
+   rename(En_erwartet = V3, E_erwartet = V4) %>%  # erwartete Werte, wenn H0 richtig ist
+   select(Wordtyp, En, E, En_erwartet, E_erwartet)) # Reihenfolge der Variablen verändern
 
 ```
 
