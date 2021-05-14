@@ -71,7 +71,6 @@ naklonska2 %>%
 ```
 
 
-
 # 3. Chi-Quadrat-Test
 
 Annahme: Die Modalkonstruktion "morati + Infinitiv" ist weniger markiert als die Modalkonstruktion "biti + treba + Infinitiv". Formael und semantische Begründungen: ...
@@ -85,7 +84,7 @@ chisq.test(naklonska[ , -1])
 
 ```
 
-Der zweite Chi-Quadrat bestätigt Hypothese H1. Die Distribution der beiden Modalkonstruktionen unterscheidet sich. Die graphische Darstellung deutet an, dass dies vor allem häufigeren Gebrauch der Modalkonstruktion "morati + Infinitiv" in belletristischen Texten liegen könnte. Nach unser Annahme wird die Modalkonstruktion "biti + treba + Infinitiv" häufiger in Texten mit dem Merkmal [+Distanz] eingesetzt. 
+Der zweite Chi-Quadrat bestätigt Hypothese H1. Die Distribution der beiden Modalkonstruktionen unterscheidet sich. Die graphische Darstellung deutet an, dass dies vor allem am häufigeren Gebrauch der Modalkonstruktion "morati + Infinitiv" in belletristischen Texten liegen könnte. Nach unser Annahme wird die Modalkonstruktion "biti + treba + Infinitiv" häufiger in Texten mit dem Merkmal [+Distanz] eingesetzt. 
 
 ```{r}
 chisq.test(naklonska2[ , -1])
