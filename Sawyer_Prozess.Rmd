@@ -1,0 +1,91 @@
+---
+title: "Tom Sawyer vs Der Prozess"
+author: "Teodor Petrič"
+date: "19 5 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 0. Programi (Packages)
+
+Namestitev:
+install.packages("quanteda")
+install.packages("readtext")
+install.packages("tidyverse")
+
+
+```{r}
+library(quanteda)
+library(readtext)
+library(tidyverse)
+
+```
+
+# 1. Preberemo besedila
+
+```{r}
+txt = readtext("data/books/*.txt", encoding = "UTF-8")
+txt
+
+```
+
+# 2. Ustvarimo korpus
+
+Korpus ali jezikovno gradivo
+
+```{r}
+romane = corpus(txt)
+
+```
+
+Povzetek
+
+```{r}
+povzetek = summary(romane)
+povzetek
+
+```
+
+
+# 3. Tokenizacija
+
+Iz gradiva izvlečemo besedne oblike (npr. s pomočjo presledkov).
+
+```{r}
+toks = tokens(romane)
+head(toks)
+
+```
+
+# 4. Čiščenje
+
+S seznama lahko izločimo "nebesede":
+
+```{r}
+besede = tokens(romane, remove_punct = T, remove_symbols = T, remove_numbers = T, remove_url = T)
+head(besede)
+
+```
+
+Izločimo lahko tudi besede, ki za vsebinsko analizo niso zaželene ("stopwords"):
+
+```{r}
+stoplist_de = c(stopwords("de"), "dass")
+
+# Obdržali bomo ločila
+woerter = tokens(romane, remove_symbols = T, remove_numbers = T, remove_url = T)
+
+woerter = tokens_select(woerter, pattern = stoplist_de, selection = "remove")
+
+```
+
+
+# 5. Kwic
+
+```{r}
+
+```
+
