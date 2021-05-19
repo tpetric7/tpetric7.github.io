@@ -12,14 +12,18 @@ knitr::opts_chunk$set(echo = TRUE)
 # 0. Programi (Packages)
 
 Namestitev:
-install.packages("quanteda")
 install.packages("readtext")
+install.packages("quanteda")
+install.packages("quanteda.textstats")
+install.packages("quanteda.textplots")
 install.packages("tidyverse")
 
 
 ```{r}
-library(quanteda)
 library(readtext)
+library(quanteda)
+library(quanteda.textstats)
+library(quanteda.textplots)
 library(tidyverse)
 
 ```
@@ -55,8 +59,8 @@ povzetek
 Iz gradiva izvlečemo besedne oblike (npr. s pomočjo presledkov).
 
 ```{r}
-toks = tokens(romane)
-head(toks)
+besede = tokens(romane)
+head(besede)
 
 ```
 
@@ -73,12 +77,23 @@ head(besede)
 Izločimo lahko tudi besede, ki za vsebinsko analizo niso zaželene ("stopwords"):
 
 ```{r}
-stoplist_de = c(stopwords("de"), "dass")
+stoplist_de = c(stopwords("de"), "dass", "Aligned", "by", "autoalignment", "Source", "Project", 
+                "bilingual-texts.com", "fully", "reviewed")
+besede = tokens_select(besede, pattern = stoplist_de, selection = "remove")
+
+```
+
+
+Naslednji seznam bomo uporabljali za KWIC (konkordance).
+
+```{r}
+stoplist_en = c("Aligned", "by", "autoalignment", "Source", "Project", 
+                "bilingual-texts.com", "fully", "reviewed")
 
 # Obdržali bomo ločila
 woerter = tokens(romane, remove_symbols = T, remove_numbers = T, remove_url = T)
-
-woerter = tokens_select(woerter, pattern = stoplist_de, selection = "remove")
+# Odstranili bomo angleške besede na začetku besedil
+woerter = tokens_select(woerter, pattern = stoplist_en, selection = "remove")
 
 ```
 
@@ -86,6 +101,140 @@ woerter = tokens_select(woerter, pattern = stoplist_de, selection = "remove")
 # 5. Kwic
 
 ```{r}
+kwic(woerter, pattern = c("Frau", "Herr"))
+
+```
+
+Konkordanco bomo pretvorili v podatkovno zbirko (data frame / tibble)
+
+```{r}
+(konkordanca <- kwic(woerter, pattern = c("Frau", "Herr"), case_insensitive = FALSE) %>% 
+  as_tibble()
+)
+
+```
+
+
+```{r}
+konkordanca %>% 
+  count(keyword)
+
+```
+
+```{r}
+(konkordanca2 <- kwic(woerter, pattern = c("*in"), case_insensitive = FALSE) %>% 
+  as_tibble()
+)
+
+```
+
+
+Poizvedovanje s pomočjo regexa: *in.
+
+```{r}
+(konkordanca2 <- kwic(woerter, pattern = "\\A[A-Z][a-z]+[^Eae]in\\b",
+                      valuetype = "regex", case_insensitive = FALSE) %>% 
+  as_tibble() %>% 
+  filter(keyword != "Immerhin", 
+         keyword != "Darin",
+         keyword != "Termin",
+         keyword != "Worin",
+         keyword != "Robin",
+         keyword != "Medizin",
+         keyword != "Austin",
+         keyword != "Mussein",
+         keyword != "Benjamin",
+         keyword != "Franklin")
+)
+
+```
+
+
+Poizvedovanje s pomočjo regexa: Manjšalnice / Diminutive (-chen, -lein)
+
+```{r}
+(konkordanca3a <- kwic(woerter, "*lein",
+                      valuetype = "glob", case_insensitive = FALSE) %>% 
+  as_tibble() %>% 
+   count(keyword, sort = TRUE)
+)
+
+(konkordanca3b <- kwic(woerter, "*chen",
+                      valuetype = "glob", case_insensitive = FALSE) %>% 
+  as_tibble() %>% 
+   count(keyword, sort = T)
+)
+
+(konkordanca3 <- kwic(woerter, 
+                      pattern = c("\\A[A-Z][a-z]*[^aäeiouürs]chen\\b",
+                                  "[A-Z]*[^kl]lein\\b"),
+                      valuetype = "regex", case_insensitive = FALSE) %>% 
+  as_tibble() %>% 
+  filter(keyword != "Welchen", 
+         keyword != "Manchen",
+         keyword != "Solchen",
+         keyword != "Fräulein")
+)
+
+```
+
+Poizvedovanje s pomočjo "regexa": Frau + Priimek / Ime
+
+```{r}
+(konkordanca4 <- kwic(woerter, pattern = phrase("\\bFrau\\b ^[A-Z][^[:punct:]]"), 
+                      valuetype = "regex", case_insensitive = FALSE) %>% 
+  as_tibble()
+)
+
+```
+
+
+# 6. Pogostnost
+
+Besedilno-besedna matrika (dfm) kot izhodišče:
+
+```{r}
+matrika = dfm(besede, tolower = FALSE) # za zdaj obdržimo velike začetnice
+
+# Odstranimo besede, ki jih v vsebinski analizi ne potrebujemo (stopwords)
+matrika = dfm_select(matrika, selection = "remove", pattern = stoplist_de)
+
+```
+
+
+```{r}
+library(quanteda.textstats)
+library(quanteda.textplots)
+
+(pogostnost = textstat_frequency(matrika, groups = c("prozess.txt", "tom.txt"))
+)
+
+```
+
+
+```{r}
+(pogost_tom = textstat_frequency(matrika, groups = c("prozess.txt", "tom.txt")) %>% 
+  filter(group == "tom.txt")
+)
+
+(pogost_prozess = textstat_frequency(matrika, groups = c("prozess.txt", "tom.txt")) %>% 
+  filter(group == "prozess.txt")
+)
+
+```
+
+# 7. Kolokacije
+
+```{r}
+(coll_1 = textstat_collocations(woerter, size = 2, tolower = TRUE)
+)
+
+```
+
+
+```{r}
+(coll_2 = textstat_collocations(woerter, size = 3, tolower = FALSE)
+)
 
 ```
 
