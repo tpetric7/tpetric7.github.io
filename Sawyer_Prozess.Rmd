@@ -12,12 +12,21 @@ knitr::opts_chunk$set(echo = TRUE)
 # 0. Programi (Packages)
 
 Namestitev:
+Če ste program(e) že namestili, lahko preskočite ta korak.
+
+```{r}
+# Programe, ki jih še nimate, lahko namestite tudi na ta način:
 install.packages("readtext")
 install.packages("quanteda")
 install.packages("quanteda.textstats")
 install.packages("quanteda.textplots")
 install.packages("tidyverse")
 
+```
+
+# 0. Programi
+
+Najprej moramo zagnati programe, ki jih potrebujemo za načrtovano delo.
 
 ```{r}
 library(readtext)
@@ -38,14 +47,14 @@ txt
 
 # 2. Ustvarimo korpus
 
-Korpus ali jezikovno gradivo
+Ustvarimo korpus ali jezikovno gradivo. Ukaz v programu "quanteda" je corpus().
 
 ```{r}
 romane = corpus(txt)
 
 ```
 
-Povzetek
+Povzetek:
 
 ```{r}
 povzetek = summary(romane)
@@ -53,10 +62,40 @@ povzetek
 
 ```
 
+Podatke iz povzetka bi lahko uporabili npr. za izračun povprečne dolžine povedi v besedilih:
+
+```{r}
+povzetek %>% 
+  group_by(Text) %>% 
+  mutate(dolzina_povedi = Tokens/Sentences)
+
+```
+
+Lahko bi tudi izračunali kazalnik slovarske raznolikosti v besedilih, tj. razmerje med različnimi (types) in pojavnicami (tokens), kar se angleščini imenuje "type token ratio" (ttr).
+
+Razlikujemo med slovarskimi enotami (lemma), različnicami (types) in pojavnicami (tokens):
+
+npr. nemški glagol "gehen" je slovarska enota, ki ima več različnic ali oblik (npr. gehe, gehst, geht, gehen, geht, ging, gingst, ... gegangen). 
+
+Pojavnice: nekatere oblike glagola so pogostejše kot druge, nekatere pa se v izbranem besedilu ne pojavljajo.
+
+```{r}
+povzetek %>% 
+  group_by(Text) %>% 
+  mutate(ttr = Types/Tokens)
+
+```
+
+Program quanteda ima za ugotavljanje slovarske raznolikosti (lexical diversity) več možnosti, kar zahteva razcepitev besedil na manjše enote, tj. tokens (besede, ločila idr.). Za nekatere funkcije moramo ustvariti besedilno matriko (document frequency matrix, dfm).
+
 
 # 3. Tokenizacija
 
+Če želimo več izvedeti o besedilih, npr. katere besede se pojavljajo v besedilih, moramo najprej ustvariti seznam besedilnih enot (tj. besed, ločil idr.).
+
 Iz gradiva izvlečemo besedne oblike (npr. s pomočjo presledkov).
+
+Za tokenizacijo ima quanteda ukaz tokens().
 
 ```{r}
 besede = tokens(romane)
@@ -74,7 +113,9 @@ head(besede)
 
 ```
 
-Izločimo lahko tudi besede, ki za vsebinsko analizo niso zaželene ("stopwords"):
+Izločimo lahko tudi besede, ki za vsebinsko analizo niso zaželene ("stopwords").
+
+V izbranih besedilih motijo tudi angleške besede, ki niso sestavni del nemških besedil.
 
 ```{r}
 stoplist_de = c(stopwords("de"), "dass", "Aligned", "by", "autoalignment", "Source", "Project", 
@@ -84,7 +125,7 @@ besede = tokens_select(besede, pattern = stoplist_de, selection = "remove")
 ```
 
 
-Naslednji seznam bomo uporabljali za KWIC (konkordance).
+Naslednji seznam bomo uporabljali za ustvarjanje konkordance, tj. seznama sobesedil, v katerem se nahaja iskalni niz (npr. neka beseda).
 
 ```{r}
 stoplist_en = c("Aligned", "by", "autoalignment", "Source", "Project", 
@@ -100,12 +141,18 @@ woerter = tokens_select(woerter, pattern = stoplist_en, selection = "remove")
 
 # 5. Kwic
 
+Za ustvarjanje konkordanc ima program quanteda ukaz "kwic" (keyword in context).
+
+Možno je iskati posamezne besede, besedne zveze, uporabljamo pa lahko tudi nadomestne znake (npr. *).
+
 ```{r}
 kwic(woerter, pattern = c("Frau", "Herr"))
 
 ```
 
-Konkordanco bomo pretvorili v podatkovno zbirko (data frame / tibble)
+Konkordanco bomo pretvorili v podatkovno zbirko (data frame / tibble). Prednost je npr., da tako pridobimo imena stolpcev (tj. spremenljivk).
+
+KWIC() ima več možnosti, npr. "case_insensitive = FALSE" razlikuje med velikimi in malimi črkami. Privzeta vrednost je "TRUE", tj. da tega ne razlikuje (tako kot Excel).
 
 ```{r}
 (konkordanca <- kwic(woerter, pattern = c("Frau", "Herr"), case_insensitive = FALSE) %>% 
@@ -114,12 +161,15 @@ Konkordanco bomo pretvorili v podatkovno zbirko (data frame / tibble)
 
 ```
 
+Z ukazom count() lahko preštejemo, koliko pojavnic je KWIC našel.
 
 ```{r}
 konkordanca %>% 
   count(keyword)
 
 ```
+
+Poiskati želimo besede s pripono "-in" za samostalnike, ki označujejo ženska osebna imena (npr. Ärztin, Köchin, ...).
 
 ```{r}
 (konkordanca2 <- kwic(woerter, pattern = c("*in"), case_insensitive = FALSE) %>% 
@@ -128,6 +178,7 @@ konkordanca %>%
 
 ```
 
+Žal vsebuje gornji seznam sobesedil veliko besednih oblik, ki niso ženska osebna imena (npr. ein, in, ...). Če želimo natančnejši seznam, moramo iskati na ustreznejši način. V ta namen moramo včasih uporabljati nadomestne znake, ki jih v angleščini imenujemo "regular expressions" (regex).
 
 Poizvedovanje s pomočjo regexa: *in.
 
@@ -149,8 +200,8 @@ Poizvedovanje s pomočjo regexa: *in.
 
 ```
 
-
-Poizvedovanje s pomočjo regexa: Manjšalnice / Diminutive (-chen, -lein)
+Še drug primer uporabe regex
+Poizvedovanje s pomočjo regex: Manjšalnice / Diminutive (-chen, -lein)
 
 ```{r}
 (konkordanca3a <- kwic(woerter, "*lein",
@@ -178,7 +229,7 @@ Poizvedovanje s pomočjo regexa: Manjšalnice / Diminutive (-chen, -lein)
 
 ```
 
-Poizvedovanje s pomočjo "regexa": Frau + Priimek / Ime
+Poizvedovanje s pomočjo "regex": Frau + Priimek / Ime
 
 ```{r}
 (konkordanca4 <- kwic(woerter, pattern = phrase("\\bFrau\\b ^[A-Z][^[:punct:]]"), 
