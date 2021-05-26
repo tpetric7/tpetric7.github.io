@@ -66,7 +66,7 @@ Podatke iz povzetka bi lahko uporabili npr. za izračun povprečne dolžine pove
 
 ```{r}
 povzetek %>% 
-  group_by(Text) %>% 
+  group_by(Text) %>%
   mutate(dolzina_povedi = Tokens/Sentences)
 
 ```
@@ -117,6 +117,8 @@ Izločimo lahko tudi besede, ki za vsebinsko analizo niso zaželene ("stopwords"
 
 V izbranih besedilih motijo tudi angleške besede, ki niso sestavni del nemških besedil.
 
+concatenate = združi: c()
+
 ```{r}
 stoplist_de = c(stopwords("de"), "dass", "Aligned", "by", "autoalignment", "Source", "Project", 
                 "bilingual-texts.com", "fully", "reviewed")
@@ -155,7 +157,7 @@ Konkordanco bomo pretvorili v podatkovno zbirko (data frame / tibble). Prednost 
 KWIC() ima več možnosti, npr. "case_insensitive = FALSE" razlikuje med velikimi in malimi črkami. Privzeta vrednost je "TRUE", tj. da tega ne razlikuje (tako kot Excel).
 
 ```{r}
-(konkordanca <- kwic(woerter, pattern = c("Frau", "Herr"), case_insensitive = FALSE) %>% 
+(konkordanca = kwic(woerter, pattern = c("Frau", "Herr"), case_insensitive = FALSE) %>% 
   as_tibble()
 )
 
