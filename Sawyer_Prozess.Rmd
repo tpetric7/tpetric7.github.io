@@ -15,12 +15,12 @@ Namestitev:
 Če ste program(e) že namestili, lahko preskočite ta korak.
 
 ```{r}
-# Programe, ki jih še nimate, lahko namestite tudi na ta način:
-install.packages("readtext")
-install.packages("quanteda")
-install.packages("quanteda.textstats")
-install.packages("quanteda.textplots")
-install.packages("tidyverse")
+# # Programe, ki jih še nimate, lahko namestite tudi na ta način:
+# install.packages("readtext")
+# install.packages("quanteda")
+# install.packages("quanteda.textstats")
+# install.packages("quanteda.textplots")
+# install.packages("tidyverse")
 
 ```
 
@@ -244,7 +244,7 @@ Poizvedovanje s pomočjo "regex": Frau + Priimek / Ime
 
 # 6. Pogostnost
 
-Besedilno-besedna matrika (dfm) kot izhodišče:
+Besedilno-besedna matrika (dfm) je izhodišče za izračun pogostnosti besednih oblik v posameznih besedilih:
 
 ```{r}
 matrika = dfm(besede, tolower = FALSE) # za zdaj obdržimo velike začetnice
@@ -276,17 +276,74 @@ library(quanteda.textplots)
 
 ```
 
-# 7. Kolokacije
+Verben des Sagens, Denkens.
 
 ```{r}
-(coll_1 = textstat_collocations(woerter, size = 2, tolower = TRUE)
+(sagen = pogostnost %>%
+   filter(str_detect(feature, "^(ge)?sag*"))
+)
+
+(reden = pogostnost %>% 
+    filter(str_detect(feature, "^(ge)?rede*"))
+)
+
+(fragen = pogostnost %>% 
+    filter(str_detect(feature, "^(ge)?frag*"))
+)
+
+(antworten = pogostnost %>% 
+    filter(str_detect(feature, "^(ge)?antwort*"))
+)
+
+(rufen = pogostnost %>% 
+    filter(str_detect(feature, pattern = "^(ge)?ruf*", negate = FALSE)) %>% 
+    filter(!str_detect(feature, "ruh|run|rum|rui|ruch"))
+)
+
+```
+
+```{r}
+sagen %>% 
+  group_by(group) %>% 
+  summarise(freq = sum(frequency)) %>% 
+  mutate(verb = "sagen")
+
+```
+
+
+# 7. Kolokacije
+
+Koleksemi = slovarske enote, ki se sopojavljajo.
+Kolokacije = jezikovne prvine, ki se sopojavljajo.
+
+```{r}
+(coll_2 = textstat_collocations(woerter, size = 2, tolower = TRUE)
 )
 
 ```
 
 
 ```{r}
-(coll_2 = textstat_collocations(woerter, size = 3, tolower = FALSE)
+(coll_3 = textstat_collocations(woerter, size = 3, tolower = FALSE)
+)
+
+```
+
+
+```{r}
+(coll_4 = textstat_collocations(woerter, size = 4, tolower = FALSE)
+)
+
+```
+
+
+```{r}
+(sogar <- coll_2 %>% 
+  filter(str_detect(collocation, "^warum"))
+)
+
+(nur <- coll_2 %>% 
+  filter(str_detect(collocation, "^wieso"))
 )
 
 ```
