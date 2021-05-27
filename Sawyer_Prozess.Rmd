@@ -453,3 +453,72 @@ head(coll_caps2, 100)
 
 ```
 
+
+# 8. Lematizacija
+
+Seznam slovarskih enot (lem) lahko naložimo z medmrežja na naš disk.
+
+```{r}
+# Preberi seznam slovarskih enot in pojavnic z diska
+lemdict = read.delim2("data/lemmatization_de.txt", sep = "\t", encoding = "UTF-8", 
+                      col.names = c("lemma", "word"), stringsAsFactors = F)
+
+# Pretvori podatkovna niza v znakovna niza
+lemma = as.character(lemdict$lemma) 
+word = as.character(lemdict$word)
+
+# Lematiziraj pojavnice v naših besedilih
+lemmas <- tokens_replace(besede,
+                             pattern = word,
+                             replacement = lemma,
+                             case_insensitive = TRUE, 
+                             valuetype = "fixed")
+
+
+```
+
+Ustvarimo matriko s slovarskimi enotami (namesto pojavnic).
+
+```{r}
+matrika_lem = dfm(lemmas, tolower = FALSE) # za zdaj obdržimo velike začetnice
+
+# Odstranimo besede, ki jih v vsebinski analizi ne potrebujemo (stopwords)
+matrika_lem = dfm_select(matrika_lem, selection = "remove", pattern = stoplist_de)
+matrika_lem
+
+```
+
+# 9. Besedni oblaček
+
+```{r}
+textplot_wordcloud(matrika_lem, comparison = TRUE, adjust = 0.3, color = c("darkblue","darkgreen"),
+                   max_size = 4, min_size = 0.75, rotation = 0.5, min_count = 30, max_words = 250)
+
+```
+
+Lepši oblaček (za obe besedili skupaj).
+
+```{r}
+# install.packages("wordcloud2)
+matrika_lem_prozess = matrika_lem[1,]
+
+set.seed(1320)
+library(wordcloud2)
+topfeat <- as.data.frame(topfeatures(matrika_lem_prozess, 100))
+topfeat <- rownames_to_column(topfeat, var = "word")
+wordcloud2(topfeat)
+
+```
+
+
+```{r}
+matrika_lem_tom = matrika_lem[2,]
+
+set.seed(1320)
+library(wordcloud2)
+topfeat <- as.data.frame(topfeatures(matrika_lem_tom, 100))
+topfeat <- rownames_to_column(topfeat, var = "word")
+wordcloud2(topfeat)
+
+```
+
