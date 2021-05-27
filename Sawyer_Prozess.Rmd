@@ -9,10 +9,13 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# 0. Programi (Packages)
+# 0. Nameščanje programov (Packages)
 
 Namestitev:
 Če ste program(e) že namestili, lahko preskočite ta korak.
+
+Znak # v programskem bloku (chunk) pomeni, da se ta vrstica ne izvaja.
+Odstrani # če želite program namestiti.
 
 ```{r}
 # # Programe, ki jih še nimate, lahko namestite tudi na ta način:
@@ -136,7 +139,7 @@ stoplist_en = c("Aligned", "by", "autoalignment", "Source", "Project",
 # Obdržali bomo ločila
 woerter = tokens(romane, remove_symbols = T, remove_numbers = T, remove_url = T)
 # Odstranili bomo angleške besede na začetku besedil
-woerter = tokens_select(woerter, pattern = stoplist_en, selection = "remove")
+woerter = tokens_select(woerter, pattern = stoplist_en, selection = "remove", padding = TRUE)
 
 ```
 
@@ -180,9 +183,11 @@ Poiskati želimo besede s pripono "-in" za samostalnike, ki označujejo ženska 
 
 ```
 
-Žal vsebuje gornji seznam sobesedil veliko besednih oblik, ki niso ženska osebna imena (npr. ein, in, ...). Če želimo natančnejši seznam, moramo iskati na ustreznejši način. V ta namen moramo včasih uporabljati nadomestne znake, ki jih v angleščini imenujemo "regular expressions" (regex).
+Žal vsebuje gornji seznam sobesedil veliko besednih oblik, ki niso ženska osebna imena (npr. ein, in, ...). Če želimo natančnejši seznam, moramo iskati na ustreznejši način, npr. z naborom nadomestnih znakov, tako imeovanih *regularnih izrazov* (regular expressions, "regex").
 
-Poizvedovanje s pomočjo regexa: *in.
+Na portalu **https://regex101.com/** lahko preizkušate in se učite regularnih izrazov.
+
+Poizvedovanje s pomočjo regularnih izrazov: *in.
 
 ```{r}
 (konkordanca2 <- kwic(woerter, pattern = "\\A[A-Z][a-z]+[^Eae]in\\b",
@@ -202,8 +207,9 @@ Poizvedovanje s pomočjo regexa: *in.
 
 ```
 
-Še drug primer uporabe regex
-Poizvedovanje s pomočjo regex: Manjšalnice / Diminutive (-chen, -lein)
+Še drug primer uporabe regularnih izrazov
+Poizvedovanje s pomočjo regex: Manjšalnice / Diminutive (-chen, -lein).
+Katera manjšalna pripona prevladuje: -lein ali -chen ?
 
 ```{r}
 (konkordanca3a <- kwic(woerter, "*lein",
@@ -233,6 +239,8 @@ Poizvedovanje s pomočjo regex: Manjšalnice / Diminutive (-chen, -lein)
 
 Poizvedovanje s pomočjo "regex": Frau + Priimek / Ime
 
+Obvezno nastavimo case_insensitive = FALSE, saj naj program razlikuje med velikimi in malimi začetnicami.
+
 ```{r}
 (konkordanca4 <- kwic(woerter, pattern = phrase("\\bFrau\\b ^[A-Z][^[:punct:]]"), 
                       valuetype = "regex", case_insensitive = FALSE) %>% 
@@ -244,16 +252,17 @@ Poizvedovanje s pomočjo "regex": Frau + Priimek / Ime
 
 # 6. Pogostnost
 
-Besedilno-besedna matrika (dfm) je izhodišče za izračun pogostnosti besednih oblik v posameznih besedilih:
+Besedilno-besedna matrika (dfm) je izhodišče za izračun in grafični prikaz več statističnih količin, npr. tudi pogostnosti besednih oblik v posameznih besedilih:
 
 ```{r}
 matrika = dfm(besede, tolower = FALSE) # za zdaj obdržimo velike začetnice
 
 # Odstranimo besede, ki jih v vsebinski analizi ne potrebujemo (stopwords)
 matrika = dfm_select(matrika, selection = "remove", pattern = stoplist_de)
-
+matrika
 ```
 
+Program quanteda ima posebno funkcijo, ki sestavi seznam besednih oblik in njihove pogostnosti, tj. textstat_frequency().
 
 ```{r}
 library(quanteda.textstats)
@@ -264,6 +273,7 @@ library(quanteda.textplots)
 
 ```
 
+Seznam besednih oblik in njihove pogostnosti lahko razdelim na dva posebna seznama, in sicer s funkcijo filter().
 
 ```{r}
 (pogost_tom = textstat_frequency(matrika, groups = c("prozess.txt", "tom.txt")) %>% 
@@ -276,7 +286,7 @@ library(quanteda.textplots)
 
 ```
 
-Verben des Sagens, Denkens.
+Glagoli rekanja in mišljenja: kateri so v izbranih besedilih pogostnejši?
 
 ```{r}
 (sagen = pogostnost %>%
@@ -303,10 +313,57 @@ Verben des Sagens, Denkens.
 ```
 
 ```{r}
-sagen %>% 
+verb1 = sagen %>% 
   group_by(group) %>% 
   summarise(freq = sum(frequency)) %>% 
   mutate(verb = "sagen")
+
+verb2 = reden %>% 
+  group_by(group) %>% 
+  summarise(freq = sum(frequency)) %>% 
+  mutate(verb = "reden")
+
+verb3 = fragen %>% 
+  group_by(group) %>% 
+  summarise(freq = sum(frequency)) %>% 
+  mutate(verb = "fragen")
+
+verb4 = antworten %>% 
+  group_by(group) %>% 
+  summarise(freq = sum(frequency)) %>% 
+  mutate(verb = "antworten")
+
+verb5 = rufen %>% 
+  group_by(group) %>% 
+  summarise(freq = sum(frequency)) %>% 
+  mutate(verb = "rufen")
+
+```
+
+Pet majhnih tabel lahko združimo v večjo tabelo, tj. s funkcijo rbind().
+
+```{r}
+glagoli = rbind(verb1, verb2, verb3, verb4, verb5)
+glagoli
+
+```
+
+Še diagram:
+
+```{r}
+glagoli %>% 
+  ggplot(aes(freq, verb, fill = verb)) +
+  geom_col() +
+  facet_wrap(~ group) +
+  theme(legend.position = "none")
+
+```
+
+Tabelo lahko tudi prerazporedimo, npr. zaradi lažje primerjave besedil takole:
+
+```{r}
+glagoli %>% 
+  pivot_wider(id_cols = verb, names_from = group, values_from = freq)
 
 ```
 
@@ -316,12 +373,23 @@ sagen %>%
 Koleksemi = slovarske enote, ki se sopojavljajo.
 Kolokacije = jezikovne prvine, ki se sopojavljajo.
 
+Statistična opredelitev:
+Če se dva izraza (npr. "dober dan") pojavljata bistveno pogosteje kot neposredna soseda, kakor bi naključno pričakovali, potem ju lahko obravnavamo kot kolokacijo.
+
+Jezikoslovna opredelitev:
+Kolokacija je pomensko povezano zaporedje besed.
+
+Funkcija textstat_collocations() v programu quanteda.
+
+"woerter" je seznam besednih oblik (padding = TRUE !), ki smo ga ustvarili zgoraj.
+
 ```{r}
-(coll_2 = textstat_collocations(woerter, size = 2, tolower = TRUE)
+(coll_2 = textstat_collocations(woerter, size = 2, tolower = TRUE) # naredi male črke !
 )
 
 ```
 
+Kolokacije s tremi členi.
 
 ```{r}
 (coll_3 = textstat_collocations(woerter, size = 3, tolower = FALSE)
@@ -336,6 +404,7 @@ Kolokacije = jezikovne prvine, ki se sopojavljajo.
 
 ```
 
+Sopomenski vprašalnici "warum" in "wieso: s katerimi besednimi oblikami se sopojavljata?
 
 ```{r}
 (sogar <- coll_2 %>% 
@@ -345,6 +414,42 @@ Kolokacije = jezikovne prvine, ki se sopojavljajo.
 (nur <- coll_2 %>% 
   filter(str_detect(collocation, "^wieso"))
 )
+
+```
+
+Kolokacija samostalniških izrazov. V nemščini imajo veliko začetnico.
+Najprej bomo sestavili seznam besednih oblik z veliko začetnico (woerter_caps).
+Potem lahko pridobimo seznam kolokacij (coll_caps2).
+
+```{r}
+woerter_caps = tokens_select(woerter, pattern = "^[A-Z]", 
+                                valuetype = "regex", 
+                                case_insensitive = FALSE, 
+                                padding = TRUE)
+
+coll_caps2 = textstat_collocations(woerter_caps, size = 2, tolower = FALSE, min_count = 5)
+head(coll_caps2, 100)
+
+```
+
+Ni smiselno upoštevati "Der + samostalnik" kot kolokacijo, saj se v nemščini velika večina samostalnikov pojavlja s členom.
+
+Zato bomo člene "Der, Die, Das" in še nekaj besednih oblik na začetku stavka spremenili v "der, die , das", ....
+
+```{r}
+woerter_small = tokens_replace(woerter, 
+                               pattern = c("Der","Die","Das","Des","Wollen","Im","Zum",
+                                           "Kein","Jeden","Wenn","Als","Da","Aber","Und","Sehen"), 
+                               replacement = c("der","die","das","des","wollen","im","zum",
+                                               "kein","jeden","wenn","als","da","aber","und","sehen"))
+
+woerter_caps = tokens_select(woerter_small, pattern = "^[A-Z]", 
+                                valuetype = "regex", 
+                                case_insensitive = FALSE, 
+                                padding = TRUE)
+
+coll_caps2 = textstat_collocations(woerter_caps, size = 2, tolower = FALSE, min_count = 5)
+head(coll_caps2, 100)
 
 ```
 
