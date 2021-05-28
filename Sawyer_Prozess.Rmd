@@ -48,6 +48,18 @@ txt
 
 ```
 
+Alternativno lahko besedila preberemo tudi z medmrežja:
+
+```{r}
+txt1 = readtext("https://raw.githubusercontent.com/tpetric7/tpetric7.github.io/main/data/books/prozess.txt", encoding = "UTF-8")
+txt2 = readtext("https://raw.githubusercontent.com/tpetric7/tpetric7.github.io/main/data/books/tom.txt", encoding = "UTF-8")
+
+# Datoteki združimo
+txt = rbind(txt1,txt2)
+
+```
+
+
 # 2. Ustvarimo korpus
 
 Ustvarimo korpus ali jezikovno gradivo. Ukaz v programu "quanteda" je corpus().
@@ -58,6 +70,17 @@ romane = corpus(txt)
 ```
 
 Povzetek:
+
+Program quanteda ima dve funkciji za povzemanje: 
+- summary()
+- textstat_summary()
+
+```{r}
+(romanstatistik = textstat_summary(romane)
+)
+
+```
+
 
 ```{r}
 povzetek = summary(romane)
@@ -407,11 +430,11 @@ Kolokacije s tremi členi.
 Sopomenski vprašalnici "warum" in "wieso: s katerimi besednimi oblikami se sopojavljata?
 
 ```{r}
-(sogar <- coll_2 %>% 
+(warum <- coll_2 %>% 
   filter(str_detect(collocation, "^warum"))
 )
 
-(nur <- coll_2 %>% 
+(wieso <- coll_2 %>% 
   filter(str_detect(collocation, "^wieso"))
 )
 
@@ -521,4 +544,17 @@ topfeat <- rownames_to_column(topfeat, var = "word")
 wordcloud2(topfeat)
 
 ```
+
+
+# 10. xray
+
+Diagram prikazuje, kje v besedilih se pojavlja besedna oblika "frau".
+Podobno: Voyant Tools (MicroSearch).
+
+```{r}
+kwic_frau <- kwic(lemmas, pattern = "frau")
+textplot_xray(kwic_frau)
+
+```
+
 
