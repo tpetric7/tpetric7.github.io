@@ -639,9 +639,11 @@ textstat_readability(romane, measure = c("Flesch", "Flesch.Kincaid", "FOG", "FOG
 ```
 
 
-# 15. Omrežje (FCM)
+# 15. Omrežje sopojavitev (FCM)
 
-Pridobi matriko sopojavljanja besednih oblik (FCM) 
+Matriko sopojavljanja besednih oblik (FCM) pridobimo v dveh korakih:
+- najprej izberemo seznam izrazov (pattern) iz matrike (dfm),
+- potem določimo matriko sopojavljanja besednih oblik (fcm).
 
 ```{r}
 dfm_tags <- dfm_select(matrika[2,], pattern = (c("tom", "huck", "*joe", "becky", "tante", "witwe",
@@ -656,7 +658,7 @@ head(toptag)
 
 ```{r}
 # Construct feature-cooccurrence matrix (fcm) of tags
-fcm_tom <- fcm(matrika[2,])
+fcm_tom <- fcm(matrika[2,]) # besedilo 2 je tom.txt
 head(fcm_tom)
 top_fcm <- fcm_select(fcm_tom, pattern = toptag)
 textplot_network(top_fcm, min_freq = 0.6, edge_alpha = 0.8, edge_size = 5)
