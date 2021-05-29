@@ -24,6 +24,8 @@ Odstrani # če želite program namestiti.
 # install.packages("quanteda.textstats")
 # install.packages("quanteda.textplots")
 # install.packages("tidyverse")
+install.packages("wordcloud2")
+install.packages("tidytext")
 
 ```
 
@@ -37,7 +39,8 @@ library(quanteda)
 library(quanteda.textstats)
 library(quanteda.textplots)
 library(tidyverse)
-
+library(tidytext)
+library(wordcloud2)
 ```
 
 # 1. Preberemo besedila
@@ -296,7 +299,21 @@ library(quanteda.textplots)
 
 ```
 
-Seznam besednih oblik in njihove pogostnosti lahko razdelim na dva posebna seznama, in sicer s funkcijo filter().
+Diagram najpogostnejših izrazov:
+
+```{r}
+pogostnost %>% 
+  slice_max(order_by = frequency, n = 20) %>% 
+  mutate(feature = reorder_within(feature, frequency, frequency, sep = ": ")) %>%
+  # ggplot(aes(frequency, reorder(feature, frequency))) +
+  ggplot(aes(frequency, feature)) +
+  geom_col(fill="steelblue") +
+  labs(x = "Frequency", y = "") +
+  facet_wrap(~ group, scales = "free")
+
+```
+
+Po potrebi lahko seznam besednih pogostnosti oblik razdelimo na dva posebna seznama, in sicer s funkcijo filter().
 
 ```{r}
 (pogost_tom = textstat_frequency(matrika, groups = c("prozess.txt", "tom.txt")) %>% 
@@ -546,7 +563,7 @@ wordcloud2(topfeat)
 ```
 
 
-# 10. xray
+# 10. Položaj v besedilu (xray)
 
 Diagram prikazuje, kje v besedilih se pojavlja besedna oblika "frau".
 Podobno: Voyant Tools (MicroSearch).
@@ -557,4 +574,92 @@ textplot_xray(kwic_frau)
 
 ```
 
+# 11. Slovarska raznolikost
+
+```{r}
+textstat_lexdiv(matrika, measure = "all")
+
+```
+
+# 12. Podobnost besedil
+
+```{r}
+textstat_simil(matrika, method = "cosine", margin = "documents")
+
+```
+
+```{r}
+# compute some term similarities
+simil1 = textstat_simil(matrika, matrika[, c("Josef", "Tom", "Sawyer", "Huck", "Finn")], 
+                         method = "cosine", margin = "features")
+head(as.matrix(simil1), 10)
+
+```
+
+```{r}
+# plot a dendrogram after converting the object into distances
+dist1 = textstat_dist(matrika, method = "euclidean", margin = "documents")
+plot(hclust(as.dist(dist1)))
+
+```
+
+
+# 13. Ključne besede
+
+Katere besedne oblike lahko uvrstimo med ključne besede, tj. take izraze, ki so najbolj značilni za neko besedilo? Program quanteda ima funkcijo *textstat_keyness()*:
+ciljno besedilo (target) primerjamo z referenčnim besedilom (reference).
+
+```{r}
+key_tom <- textstat_keyness(matrika, target = "tom.txt")
+key_tom
+
+key_prozess <- textstat_keyness(matrika, target = "prozess.txt")
+key_prozess
+
+```
+
+```{r}
+textplot_keyness(key_tom, key_tom$n_target == 1)
+textplot_keyness(key_tom, key_prozess$n_target == 1)
+textplot_keyness(key_tom)
+textplot_keyness(key_prozess)
+
+```
+
+
+# 14. Razumljivost besedil
+
+Indeksi razumljivosti (readability index) so prirejeni za angleščino, za druge jezike veljajo v manjši meri.
+
+Flesch-Indeks: Prozess ima nekoliko nižjo vrednost (52) kot Tom Sawyer (61), kar pomeni, da Prozess (zaradi daljših povedi in besed) težje beremo (razumemo), Tom Sawyer pa z večjo lahkoto.
+
+```{r}
+textstat_readability(romane, measure = c("Flesch", "Flesch.Kincaid", "FOG", "FOG.PSK", "FOG.NRI"))
+
+```
+
+
+# 15. Omrežje (FCM)
+
+Pridobi matriko sopojavljanja besednih oblik (FCM) 
+
+```{r}
+dfm_tags <- dfm_select(matrika[2,], pattern = (c("tom", "huck", "*joe", "becky", "tante", "witwe",
+                                                 "polly", "sid", "mary", "thatcher", "höhle", "herz",
+                                                 "*schule", "katze", "geld", "zaun", "piraten",
+                                                 "schatz")))
+toptag <- names(topfeatures(dfm_tags, 50))
+head(toptag)
+
+```
+
+
+```{r}
+# Construct feature-cooccurrence matrix (fcm) of tags
+fcm_tom <- fcm(matrika[2,])
+head(fcm_tom)
+top_fcm <- fcm_select(fcm_tom, pattern = toptag)
+textplot_network(top_fcm, min_freq = 0.6, edge_alpha = 0.8, edge_size = 5)
+
+```
 
