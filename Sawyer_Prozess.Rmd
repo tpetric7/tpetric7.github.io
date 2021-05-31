@@ -26,6 +26,10 @@ Odstrani # če želite program namestiti.
 # install.packages("tidyverse")
 install.packages("wordcloud2")
 install.packages("tidytext")
+install.packages("udpipe")
+install.packages("janitor")
+install.packages("scales")
+install.packages("widyr")
 
 ```
 
@@ -41,6 +45,11 @@ library(quanteda.textplots)
 library(tidyverse)
 library(tidytext)
 library(wordcloud2)
+library(udpipe)
+library(janitor)
+library(scales)
+library(widyr)
+
 ```
 
 # 1. Preberemo besedila
@@ -662,6 +671,322 @@ fcm_tom <- fcm(matrika[2,]) # besedilo 2 je tom.txt
 head(fcm_tom)
 top_fcm <- fcm_select(fcm_tom, pattern = toptag)
 textplot_network(top_fcm, min_freq = 0.6, edge_alpha = 0.8, edge_size = 5)
+
+```
+
+
+# 16. Slovnična analiza
+
+Za slovnično analizo in lematizacijo besednih oblik lahko uporabljamo posebne programe (npr. spacyr ali udpipe).
+
+Program udpipe je na voljo za številne jezike, tudi za nemščino in slovenščino.
+
+## 16.1 Priprava
+
+Pred prvo uporabo moramo naložiti model za nemški jezik z interneta.
+
+```{r}
+library(udpipe)
+sprachmodell <- udpipe_download_model(language = "german")
+
+```
+
+V naslednjem koraku naložimo jezikovni model v pomnilnik.
+
+```{r}
+udmodel_de <- udpipe_load_model(sprachmodell$file_model)
+
+```
+
+
+Če je jezikovni model že v naši delovni mapi, download ni potreben, saj ga lahko takoj naložimo z diska v pomnilnik.
+
+```{r}
+file_model = "german-gsd-ud-2.5-191206.udpipe"
+udmodel_de <- udpipe_load_model(file_model)
+
+```
+
+
+Naslednji korak je *udpipe_annotate()*: program udpipe označuje besedne oblike po več merilih.
+
+Udpipe prebere in označuje besedilo takole:
+
+```{r}
+# Na začetku je readtext prebral besedila, shranili smo jih v spremenljivki "txt".
+x <- udpipe_annotate(udmodel_de, x = txt$text, trace = TRUE)
+
+# # samo prvo besedilo:
+# x <- udpipe_annotate(udmodel_de, x = txt$text[1], trace = TRUE)
+
+x <- as.data.frame(x)
+
+```
+
+Zgradba podatkovnega niza (structure of data frame):
+
+```{r}
+str(x)
+```
+
+Podatkovni niz ima tako obliko:
+
+```{r}
+x
+
+```
+
+
+## 16.2 Primerjava Noun : Pron
+
+Zdaj lahko začnemo poizvedovati po besednih oblikah, slovarskih enotah in slovničnih kategorijah.
+
+```{r}
+(tabela = x %>% 
+  group_by(doc_id) %>% 
+  count(upos) %>% 
+  filter(!is.na(upos),
+         upos != "PUNCT")
+)
+
+tabela %>% 
+  mutate(upos = reorder_within(upos, n, n, sep = ": ")) %>% 
+  ggplot(aes(n, upos, fill = upos)) +
+  geom_col() +
+  facet_wrap(~ doc_id, scales = "free") +
+  theme(legend.position = "none") +
+  labs(x = "Število pojavnic", y = "")
+
+```
+
+Izračun deležev v odstotkih:
+
+```{r}
+(delezi = tabela %>% 
+  mutate(prozent = n/sum(n)) %>% 
+  pivot_wider(id_cols = upos, names_from = doc_id, values_from = n:prozent)
+)
+
+```
+
+
+```{r}
+delezi %>% 
+  filter(upos %in% c("NOUN", "PRON"))
+
+```
+
+Ali se besedili razlikujeta glede na razmerje med samostalniki in zaimki?
+
+```{r}
+# za hi kvadrat test potrebujemo le drugi in tretji stolpec
+nominal = delezi %>% 
+  filter(upos %in% c("NOUN", "PRON")) %>% 
+  select(n_doc1, n_doc2) 
+
+chisq.test(nominal)
+
+```
+
+Besedili se razlikujeta glede razmerja med samostalniki in zaimki: X^2 (1) = 147,38; p < 0,001.
+Iz gornje tabele pogostnosti je razvidno, da je delež zaimkov v romanu "Prozess" sorazmerno večji kot v romanu "Tom Sawyer". Da bi ugotovili, kaj to pomeni, bi si morali podrobneje ogledati, kateri zaimki in kateri samostalniki bistveno vplivajo na to številčno razmerje. Na splošno velja, da so zaimki manj zanesljiva jezikovna sredstva kot samostalniki, samostalniki pa so bolj zapleteni.
+
+
+Če želimo primerjati eno besedno vrsto z vsemi drugimi v podatkovnem nizu, je pretvorba bolj zapletena, saj moramo podobno kot v Excelu 
+- najprej izračunati vsoto za vse besedne vrste, 
+- potem odšteti število zaimkov oz. samostalnikov od vsote, 
+- razliko pa upoštevati za tabelo 2x2 za hi kvadrat test.
+
+```{r}
+(zaimki = x %>% 
+  group_by(doc_id) %>% 
+  count(upos) %>% 
+  filter(!is.na(upos),
+         upos != "PUNCT") %>% 
+  mutate(vsota = sum(n),
+         no_noun = vsota - n[upos == "NOUN"],
+         no_pron = vsota - n[upos == "PRON"]) %>% 
+  filter(upos == "PRON") %>% 
+  select(doc_id, n, no_pron) %>% 
+  pivot_longer(-doc_id, 'kategorija', 'vrednost') %>%
+  pivot_wider(kategorija, doc_id)
+)
+
+(samostalniki = x %>% 
+  group_by(doc_id) %>% 
+  count(upos) %>% 
+  filter(!is.na(upos),
+         upos != "PUNCT") %>% 
+  mutate(vsota = sum(n),
+         no_noun = vsota - n[upos == "NOUN"],
+         no_pron = vsota - n[upos == "PRON"]) %>% 
+  filter(upos == "NOUN") %>% 
+  select(doc_id, n, no_noun) %>% 
+  pivot_longer(-doc_id, 'kategorija', 'vrednost') %>%
+  pivot_wider(kategorija, doc_id)
+)
+
+```
+
+Hi kvadrat testa:
+- primerjava števila zaimkov nasproti ostalim besednim vrstam,
+- primerjava števila samostalnikov nasproti ostalim besednim vrstam.
+
+```{r}
+# izločimo prvi stolpec [, -1], za hi kvadrat test potrebujemo le drugi in tretji stolpec
+chisq.test(zaimki[,-1])
+chisq.test(samostalniki[,-1])
+
+```
+
+Besedili se razlikujeta glede deleža zaimkov in samostalnikov.
+
+
+## 16.3 Primerjava veznikov
+
+Primerjati želimo število stavkov s prirednim in podrednim veznikom.
+
+Osnovna domneva je, da priredno zložene povedi (vsebujejo stavek, uveden s prirednim veznikom) lažje razumemo kot podredno zložene povedi (vsebujejo stavek, uveden s podrednim veznikom).
+
+```{r}
+(vezniki = tabela %>% 
+  filter(upos %in% c("CCONJ", "SCONJ")) %>% 
+  mutate(prozent = n/sum(n)) %>% 
+  pivot_wider(id_cols = upos, names_from = doc_id, values_from = n:prozent)
+)
+
+```
+
+Odstotki nakazujejo, da je v romanu Prozess delež prirednih veznikov manjši kot v romanu Tom Sawyer.
+
+Hi kvadrat test (upoštevane so le povedi, ki vsebujejo veznik) za preverjanje, ali je razlika dovolj velika, da bi bila nenaključna.
+
+```{r}
+chisq.test(vezniki[,c(2:3)])
+
+```
+
+Razlika med romanoma je statistično značilna.
+
+
+Če upoštevamo tudi vsote drugih besednih vrst (kot zgoraj):
+
+```{r}
+(koord = tabela %>% 
+  mutate(vsota = sum(n),
+         no_cconj = vsota - n[upos == "CCONJ"],
+         no_sconj = vsota - n[upos == "SCONJ"]) %>% 
+  filter(upos == "CCONJ") %>% 
+  select(doc_id, n, no_cconj) %>% 
+  pivot_longer(-doc_id, 'kategorija', 'vrednost') %>%
+  pivot_wider(kategorija, doc_id)
+)
+
+(subord = tabela %>% 
+  mutate(vsota = sum(n),
+         no_cconj = vsota - n[upos == "CCONJ"],
+         no_sconj = vsota - n[upos == "SCONJ"]) %>% 
+  filter(upos == "SCONJ") %>% 
+  select(doc_id, n, no_sconj) %>% 
+  pivot_longer(-doc_id, 'kategorija', 'vrednost') %>%
+  pivot_wider(kategorija, doc_id)
+)
+
+```
+
+Hi kvadrat preizkus izkazuje razliko med romanoma
+
+```{r}
+chisq.test(koord[,-1])
+chisq.test(subord[,-1])
+
+```
+
+Besedili se razlikujeta glede števila veznikov.
+
+
+## 16.4 Slovarske enote
+
+Program udpipe je vsako besedno obliko dodelil slovarski enoti (lemma).
+Koliko koliko slovarskih enot je v besedilih?
+Katerim besednim vrstam najpogosteje pripadajo?
+
+```{r}
+(tabela2 = x %>% 
+  group_by(doc_id, upos) %>% 
+    filter(!is.na(upos),
+           upos != "PUNCT",
+           upos != "X") %>% 
+  distinct(lemma) %>% 
+  count(lemma) %>% 
+  summarise(lemmas = sum(n)) %>% 
+  mutate(prozent = round(lemmas/sum(lemmas), 4)) %>% 
+  arrange(-prozent)
+)
+
+tabela2 %>% 
+  # slice_max(order_by = prozent, n=6) %>% 
+  mutate(upos = reorder_within(upos, lemmas, paste("(",100*prozent,"%)"), sep = " ")) %>%
+  ggplot(aes(prozent, upos, fill = upos)) +
+  geom_col() +
+  facet_wrap(~ doc_id, scales = "free") +
+  theme(legend.position = "none") +
+  scale_x_continuous(labels = percent_format()) +
+  labs(x = "Anteil", y = "Wortklasse")
+
+```
+
+
+## 16.5 Korelacija besed
+
+Katere besedne pogostnosti se vzporedno povečujejo ali zmanjšujejo  (pairwise correlation) ?
+Podobno analizno orodje: Voyant Tools.
+
+```{r}
+library(widyr)
+
+# pairwise correlation
+(correlations = x %>% 
+  filter(dep_rel != "punct", dep_rel != "nummod") %>%
+  mutate(lemma = tolower(lemma), token = tolower(token),
+         lemma = str_trim(lemma), token = str_trim(token)) %>% 
+  janitor::clean_names() %>%
+  group_by(doc_id, lemma, token, sentence_id) %>% 
+  # add_count(token) %>% 
+  summarize(Freq = n()) %>% 
+  arrange(-Freq) %>% 
+  filter(Freq > 2) %>% 
+  pairwise_cor(lemma, sentence_id, sort = TRUE) %>% 
+  filter(correlation < 1 & correlation > 0.3)
+)
+
+```
+
+Tom Sawyer: Zaun.
+
+```{r}
+correlations %>%
+  filter(item1 == "zaun") %>%
+  mutate(item2 = fct_reorder(item2, correlation)) %>%
+  ggplot(aes(item2, correlation, fill = item2)) +
+  geom_col(show.legend = F) +
+  coord_flip() +
+  labs(title = "What tends to appear with 'Zaun'?",
+       subtitle = "Among elements that appeared in at least 2 sentences")
+
+```
+
+Prozess: Gericht.
+
+```{r}
+correlations %>%
+  filter(item1 == "gericht") %>%
+  mutate(item2 = fct_reorder(item2, correlation)) %>%
+  ggplot(aes(item2, correlation, fill = item2)) +
+  geom_col(show.legend = F) +
+  coord_flip() +
+  labs(title = "What tends to appear with 'Gericht'?",
+       subtitle = "Among elements that appeared in at least 2 sentences")
 
 ```
 
