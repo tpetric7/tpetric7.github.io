@@ -31,10 +31,12 @@ plot(allEffects(m), multiline=TRUE, grid=TRUE, rug=FALSE, as.table=TRUE)
 ``` r
 library(readtext)
 library(quanteda)
-library(quanteda.textplots
+library(quanteda.textplots)
 
 txt = readtext("data/books/*.txt", encoding = "UTF-8")
 romane = corpus(txt)
 kwic_frau = kwic(corpus, pattern = "frau")
 textplot_xray(kwic_frau)
 ```
+
+![Plot 3](pictures/kwic_xray_frau.png)
