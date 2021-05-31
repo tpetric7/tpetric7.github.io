@@ -578,7 +578,7 @@ Diagram prikazuje, kje v besedilih se pojavlja besedna oblika "frau".
 Podobno: Voyant Tools (MicroSearch).
 
 ```{r}
-kwic_frau <- kwic(lemmas, pattern = "frau")
+kwic_frau = kwic(lemmas, pattern = "frau")
 textplot_xray(kwic_frau)
 
 ```
