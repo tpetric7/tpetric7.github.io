@@ -30,6 +30,8 @@ install.packages("udpipe")
 install.packages("janitor")
 install.packages("scales")
 install.packages("widyr")
+install.packages("syuzhet")
+install.packages("corpustools")
 
 ```
 
@@ -49,6 +51,8 @@ library(udpipe)
 library(janitor)
 library(scales)
 library(widyr)
+library(syuzhet)
+library(corpustools)
 
 ```
 
@@ -987,6 +991,245 @@ correlations %>%
   coord_flip() +
   labs(title = "What tends to appear with 'Gericht'?",
        subtitle = "Among elements that appeared in at least 2 sentences")
+
+```
+
+
+# 17. Sentiment
+
+Stopnjo čustvenosti ali emocionalnosti besedila je mogoče določiti s sentimentnim slovarjem.
+
+## 17.1 Različica 1
+Uporaba nrc leksikona za nemščino (priložen programu syuzhet).
+
+Najprej besedilo s funkcijo *get_sentences()* razcepimo na povedi.
+
+```{r}
+library(syuzhet)
+
+tom_v = get_sentences(txt$text[2]) # izberemo drugo besedilo: tom.txt
+tom_v = (tom_v[-1]) # tako lahko izločimo prvo vrstico (uredniško pripombo)
+head(tom_v[-1])
+
+```
+
+Funkcija *get_sentiment()* dodeli besedam v povedih pozitivno (+1), negativno (-1) ali nevtralno (0) čustveno vrednost. Program te vrednosti sešteje. 
+
+```{r}
+tom_values <- get_sentiment(tom_v, method = "nrc", language = "german")
+length(tom_values)
+tom_values[100:110]
+
+```
+
+Povedi, čustvene vrednosti in dolžino povedi povežemo v podatkovni niz. To nam olajšuje oceno, kako uspešna je bila uporaba sentimentnega slovarja v našem besedilu.
+Preimenovali bomo tudi nekaj stolpcev.
+
+```{r}
+sentiment1 = cbind(tom_v, tom_values, ntoken(tom_v)) %>% 
+  as.data.frame() %>% 
+  rename(words = V3,
+         text = tom_v,
+         values = tom_values) %>% 
+  mutate(doc_id = "tom.txt") %>% 
+  rowid_to_column(var = "sentence")
+head(sentiment1)
+View(sentiment1)
+
+```
+
+Gornje postopke ponovimo za besedilo, ki ga želimo primerjati s prvim.
+
+```{r}
+prozess_v = get_sentences(txt$text[1]) # izberemo prvo besedilo: prozess.txt
+prozess_v = (prozess_v[-1]) # tako lahko izločimo prvo vrstico (uredniško pripombo)
+prozess_values <- get_sentiment(prozess_v, method = "nrc", language = "german")
+sentiment2 = cbind(prozess_v, prozess_values, ntoken(prozess_v)) %>% 
+  as.data.frame() %>% 
+  rename(words = V3,
+         text = prozess_v,
+         values = prozess_values) %>% 
+  mutate(doc_id = "prozess.txt") %>% 
+  rowid_to_column(var = "sentence")
+head(sentiment2)
+View(sentiment2)
+
+```
+
+S seštevanjem čustvenih vrednosti je mogoče oceniti, katero besedilo ima več pozitivno ocenjenih besed. V ta namen bomo združili podatkovna niza in uredili obliko stolpcev "words" in "values".
+
+```{r}
+sentiment = rbind(sentiment1, sentiment2) %>% as_tibble() %>% 
+  mutate(values = parse_number(values),
+         words = parse_number(words)) %>%
+  select(doc_id, sentence, words, values, text)
+head(sentiment)
+
+```
+
+Rezultat: po gornji metodi je povprečje čustvenih vrednosti v romanu "Prozess" nekoliko večje kot v romanu "Tom Sawyer". To je v nasprotju z našim pričakovanjem, saj Tom Sawyer vsebuje kar nekaj vedrih zgodb, je pa res, da so njegove pustolovščine pogosto tudi nevarne ali strašljive. 
+
+```{r}
+sentiment %>% 
+  group_by(doc_id) %>% 
+  summarise(polarnost = mean(values))
+
+```
+
+Poskusimo drugače: pozitivne, nevtralne in negativne vrednosti obravnajmo ločeno in upoštevajmo tudi dolžino povedi.
+
+```{r}
+sentiment1 = sentiment %>% 
+  group_by(doc_id) %>% 
+  mutate(positive = ifelse(values > 0, abs(values), 0),
+         neutral = ifelse(values == 0, 1, 0),
+         negative = ifelse(values < 0, abs(values), 0))
+sentiment1 %>% 
+  summarise(pos = mean(100*positive/words),
+            neut = mean(100*neutral/words),
+            neg = mean(100*negative/words))
+
+```
+
+Ta rezultat je skladnejši z našim pričakovanjem. 
+
+Poglejmo še nekaj povedi, ki so bile ocenjene negativno:
+
+```{r}
+sentiment1 %>% 
+  filter(negative > 0)
+```
+
+
+
+## 17.2 Različica 2
+
+```{r}
+tom_v = get_sentences(txt$text[2])
+tom_nrc_values = get_nrc_sentiment(tom_v)
+tom_joy_items = which(tom_nrc_values$joy > 0)
+head(tom_v[tom_joy_items], 4)
+
+```
+
+```{r}
+nrc_sentiment = as.data.frame(cbind(tom_v, tom_nrc_values))
+head(nrc_sentiment)
+
+```
+
+## 17.3 Različica 3
+
+Drugi sentimentni slovarji z medmrežja: npr. BAWLR lahko uporabljamo kot sentimentni slovar.
+
+```{r}
+# This lexicons contains values of Emotional valence and arousal ranging from 1 to 5.
+# But this extended version contains also binary Emo_Val values (1, -1).
+bawlr <- read.delim2("data/BAWLR_utf8.txt", sep = "\t", dec = ",", fileEncoding = "UTF-8", 
+                     header = T, stringsAsFactors = T)
+# # bawlr$EmoVal <- as.character(bawlr$EmoVal)
+# # str(EmoVal)
+# bawlr$EmoVal <- gsub('NEG', '-1', bawlr$EmoVal)
+# bawlr$EmoVal <- gsub('POS', '1', bawlr$EmoVal)
+# bawlr$EmoVal <- as.numeric(bawlr$EmoVal)
+head(bawlr)
+
+```
+
+Sestavimo dva seznama:
+
+```{r}
+positive.words = bawlr %>% 
+  mutate(WORD_LOWER = as.character(WORD_LOWER)) %>% 
+  select(EmoVal, WORD_LOWER) %>% 
+  filter(EmoVal == "POS") %>% 
+  select(WORD_LOWER) %>% 
+  filter(str_detect(WORD_LOWER, "[a-zA-Z]"))
+
+negative.words = bawlr %>% 
+  mutate(WORD_LOWER = as.character(WORD_LOWER)) %>% 
+  select(EmoVal, WORD_LOWER) %>% 
+  filter(EmoVal == "NEG") %>% 
+  select(WORD_LOWER) %>% 
+  filter(str_detect(WORD_LOWER, "[a-zA-Z]"))
+
+```
+
+Ustvarimo quanteda slovar *dictionary()*:
+
+```{r}
+bawlr_dict = dictionary(list(positive = list(positive.words), negative = list(negative.words)))
+
+```
+
+Uporabljamo matriko (dfm) s slovarskimi enotami (lemma), saj slovar bawlr_dict vsebujejo le osnovno obliko slovarskih enot.
+
+```{r}
+matrika_lemmas = dfm(matrika_lem, tolower = TRUE)
+
+result = matrika_lemmas %>% 
+  dfm_lookup(bawlr_dict) %>% 
+  convert(to = "data.frame") %>% 
+  as_tibble
+result
+
+```
+
+Dodamo lahko skupno dolžino besed, če želimo normalizirati rezultat z ozirom na dolžino besedil.
+
+```{r}
+result = result %>% mutate(length=ntoken(matrika_lemmas))
+result
+
+```
+
+Po navadi želimo izračunati skupni sentimentno vrednost. Možnosti je več: npr.
+- odšteti negativne vrednosti od pozitivnih in nato razliko deliti z vsoto obeh vrednosti, 
+- odšteti negativne vrednosti od pozitivnih in nato razliko deliti z dolžino besedil,
+
+Izračunamo lahko tudi stopnjo subjektivnosti, tj. koliko čustvenih vrednosti je skupno izraženih:
+
+```{r}
+result = result %>% mutate(sentiment1=(positive - negative) / (positive + negative))
+result = result %>% mutate(sentiment2=(positive - negative) / length)
+result = result %>% mutate(subjektivnost=(positive + negative) / length)
+result
+
+```
+
+### Barvno označevanje
+
+Program corpustools barvno označuje besede v besedilih z ozirom na čustvene vrednosti besed v sentimentnem slovarju.
+
+Prvi korak je ustvarjanje tcorpusa.
+
+```{r}
+library(corpustools)
+t = create_tcorpus(txt, doc_column="doc_id")
+
+```
+
+V drugem koraku sledi iskanje po slovarju (tcorpus):
+
+```{r}
+t$code_dictionary(bawlr_dict, column = 'bawlr')
+t$set('sentiment', 1, subset = bawlr %in% c('positive','neg_negative'))
+t$set('sentiment', -1, subset = bawlr %in% c('negative','neg_positive'))
+
+```
+
+Prikaz barvno označenih besedil v oknu "Viewer":
+
+```{r}
+browse_texts(t, scale='sentiment')
+
+```
+
+Prikaz barvno označenih besedil v spletnem brskalniku in shranjevanje v obliki html datoteke:
+
+```{r}
+browse_texts(t, scale='sentiment', filename = "sentiment_prozess_tom.html", 
+             header = "Sentiment in Kafkas Prozess und Twains Tom Sawyer")
 
 ```
 
