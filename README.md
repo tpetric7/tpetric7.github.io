@@ -40,3 +40,9 @@ textplot_xray(kwic_frau)
 ```
 
 ![Plot 3](pictures/kwic_xray_frau.png)
+
+
+### Vowel formants in L1 / L2 German
+
+![Plot 4](pictures/messungen_tp_vokalformanten_ipa.jpg)
+![Plot 5](pictures/vokalformanten_interaktiv_l1_l2_lang_kurz.png)
