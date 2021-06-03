@@ -60,12 +60,12 @@ glimpse(vokale)
 
 ```{r}
 df0 <- read.csv("data/Deutsche_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8") 
-df1a <- read.csv("data/Monika_Maseva_I_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8") 
-df1b <- read.csv("data/Monika_Maseva_II_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8") 
-df2 <- read.csv("data/Donna_Petrovic_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8")
-df3 <- read.csv("data/Metka_Jencic_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8") 
-df4 <- read.csv("data/Jasmina_Straziscar_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8") 
-df5 <- read.csv("data/Teodor_Petric_II_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8") 
+df1a <- read.csv("data/Monika_I_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8") 
+df1b <- read.csv("data/Monika_II_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8") 
+df2 <- read.csv("data/Donna_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8")
+df3 <- read.csv("data/Metka_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8") 
+df4 <- read.csv("data/Jasmina_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8") 
+df5 <- read.csv("data/Teodor_II_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8") 
 
 df0 <- df0 %>% mutate(speaker = "Deutsche")
 df1a <- df1a %>% mutate(speaker = "Monika1")
