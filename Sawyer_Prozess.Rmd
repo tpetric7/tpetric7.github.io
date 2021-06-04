@@ -185,7 +185,7 @@ woerter = tokens_select(woerter, pattern = stoplist_en, selection = "remove", pa
 
 # 5. Kwic
 
-Za ustvarjanje konkordanc ima program quanteda ukaz "kwic" (keyword in context).
+Za sestavo konkordanc ima program quanteda funkcijo *kwic()* (keyword in context).
 
 Možno je iskati posamezne besede, besedne zveze, uporabljamo pa lahko tudi nadomestne znake (npr. *).
 
@@ -194,9 +194,9 @@ kwic(woerter, pattern = c("Frau", "Herr"))
 
 ```
 
-Konkordanco bomo pretvorili v podatkovno zbirko (data frame / tibble). Prednost je npr., da tako pridobimo imena stolpcev (tj. spremenljivk).
+Konkordanco bomo pretvorili v podatkovno zbirko, tj. *data.frame* ali *tibble()*. Prednost je npr., da tako pridobimo imena stolpcev (tj. spremenljivk).
 
-KWIC() ima več možnosti, npr. "case_insensitive = FALSE" razlikuje med velikimi in malimi črkami. Privzeta vrednost je "TRUE", tj. da tega ne razlikuje (tako kot Excel).
+*kwic()* ima več možnosti, npr. "case_insensitive = FALSE" razlikuje med velikimi in malimi črkami. Privzeta vrednost je "TRUE", tj. da tega ne razlikuje (tako kot Excel).
 
 ```{r}
 (konkordanca = kwic(woerter, pattern = c("Frau", "Herr"), case_insensitive = FALSE) %>% 
@@ -205,7 +205,7 @@ KWIC() ima več možnosti, npr. "case_insensitive = FALSE" razlikuje med velikim
 
 ```
 
-Z ukazom count() lahko preštejemo, koliko pojavnic je KWIC našel.
+Z ukazom *count()* lahko preštejemo, koliko pojavnic je KWIC našel.
 
 ```{r}
 konkordanca %>% 
@@ -216,7 +216,7 @@ konkordanca %>%
 Poiskati želimo besede s pripono "-in" za samostalnike, ki označujejo ženska osebna imena (npr. Ärztin, Köchin, ...).
 
 ```{r}
-(konkordanca2 <- kwic(woerter, pattern = c("*in"), case_insensitive = FALSE) %>% 
+(konkordanca2 = kwic(woerter, pattern = c("*in"), case_insensitive = FALSE) %>% 
   as_tibble()
 )
 
@@ -229,7 +229,7 @@ Na portalu **https://regex101.com/** lahko preizkušate in se učite regularnih 
 Poizvedovanje s pomočjo regularnih izrazov: *in.
 
 ```{r}
-(konkordanca2 <- kwic(woerter, pattern = "\\A[A-Z][a-z]+[^Eae]in\\b",
+(konkordanca2 = kwic(woerter, pattern = "\\A[A-Z][a-z]+[^Eae]in\\b",
                       valuetype = "regex", case_insensitive = FALSE) %>% 
   as_tibble() %>% 
   filter(keyword != "Immerhin", 
@@ -239,7 +239,7 @@ Poizvedovanje s pomočjo regularnih izrazov: *in.
          keyword != "Robin",
          keyword != "Medizin",
          keyword != "Austin",
-         keyword != "Mussein",
+         keyword != "Musselin",
          keyword != "Benjamin",
          keyword != "Franklin")
 )
@@ -251,7 +251,7 @@ Poizvedovanje s pomočjo regex: Manjšalnice / Diminutive (-chen, -lein).
 Katera manjšalna pripona prevladuje: -lein ali -chen ?
 
 ```{r}
-(konkordanca3a <- kwic(woerter, "*lein",
+(konkordanca3a = kwic(woerter, "*lein",
                       valuetype = "glob", case_insensitive = FALSE) %>% 
   as_tibble() %>% 
    count(keyword, sort = TRUE)
