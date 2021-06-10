@@ -6,7 +6,7 @@
 - t test
 - Ordinary least squares Regression
 - Excel functions (here: xlookup) compared to R 
-- basics of NLP (quanteda)
+- basics of NLP (quanteda): "docs/Sawyer_Prozess.md"
 
 ### OLS Regression
 
