@@ -596,10 +596,30 @@ textstat_lexdiv(matrika, measure = "all")
 
 # 12. Podobnost besedil
 
+Ta postopek je bolj zanimiv, če želimo primerjati več besedil. Zato bomo dodali še Kafkino novelo.
+
 ```{r}
-textstat_simil(matrika, method = "cosine", margin = "documents")
+# odpremo datoteko
+verwandl = readtext("data/books/verwandlung/verwandlung.txt", encoding = "UTF-8")
+# ustvarimo nov korpus
+verw_corp = corpus(verwandl)
+# združimo novi korpus s prrejšnjim
+romane3 = romane + verw_corp
+# tokenizacija
+romane3_toks = tokens(romane3)
+# ustvarimo matriko (dfm)
+romane3_dfm = dfm(romane3_toks)
 
 ```
+
+Rezultat: Kafkina novela "Die Verwandlung" je Kafkinemu romanu "Der Prozess" nekoliko podobnejša kot Twainov roman "Tom Sawyer".
+
+```{r}
+textstat_simil(romane3_dfm, method = "cosine", margin = "documents")
+
+```
+
+Podobnost oblik (features).
 
 ```{r}
 # compute some term similarities
@@ -609,9 +629,11 @@ head(as.matrix(simil1), 10)
 
 ```
 
+Različnost besedil (Kaj je ta metoda upoštevala? Razliko v dolžini?):
+
 ```{r}
 # plot a dendrogram after converting the object into distances
-dist1 = textstat_dist(matrika, method = "euclidean", margin = "documents")
+dist1 = textstat_dist(romane3_dfm, method = "euclidean", margin = "documents")
 plot(hclust(as.dist(dist1)))
 
 ```
