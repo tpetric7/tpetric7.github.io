@@ -15,7 +15,7 @@
 - [Modal verb constructions](docs/Modalkonstruktionen_chisq3.md)
 
 * t test
-- [Politeness and Pitch](docs/t_preskus.md)
+- [Politeness and Pitch](docs/t_preskus.R)
 
 * Ordinary least squares Regression
 - [Politeness and Pitch, V1](docs/politeness.md)
