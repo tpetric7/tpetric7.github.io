@@ -311,7 +311,7 @@ library(ggrepel)
        x = "Formant F2: << vorne - hinten >>")
  )
 
-ggsave("pictures/messungen_tp_vokalformanten_ipa.jpg", dpi = 600)
+ggsave("pictures/messungen_tp_vokalformanten_ipa.jpg", dpi = 600, width = 10, height = 8)
 
 library(plotly)
 ggplotly(graph6) %>% layout(showlegend = FALSE)
@@ -463,6 +463,17 @@ with(vokale_agg, plotVowels(f1_avg, f2_avg, vowel, group = lange, pch.tokens = v
     var.sty.by = lange, hull.fill = TRUE, hull.line = TRUE, fill.opacity = 0.1, 
     pretty = TRUE))
 
+# 1. Open jpeg file
+jpeg("pictures/phonR_vowel_space.jpg", 
+     width = 840, height = 535)
+# 2. Create the plot
+with(vokale_agg, plotVowels(f1_avg, f2_avg, vowel, group = lange, pch.tokens = vowel, cex.tokens = 1.2, 
+    alpha.tokens = 0.3, plot.means = TRUE, pch.means = vowel, cex.means = 2, var.col.by = vowel, 
+    var.sty.by = lange, hull.fill = TRUE, hull.line = TRUE, fill.opacity = 0.1, 
+    pretty = TRUE))
+# 3. Close the file
+dev.off()
+
 ```
 
 ```{r}
@@ -473,6 +484,17 @@ with(vokale, plotVowels(f1, f2, vokal, group = lange, pch.tokens = vokal, cex.to
     alpha.tokens = 0.3, plot.means = TRUE, pch.means = vokal, cex.means = 2, var.col.by = lange, 
     var.sty.by = lange, hull.fill = TRUE, hull.line = TRUE, fill.opacity = 0.1, 
     pretty = TRUE))
+
+# 1. Open jpeg file
+jpeg("pictures/phonR_vowel_space2.jpg", 
+     width = 840, height = 535)
+# 2. Create the plot
+with(vokale, plotVowels(f1, f2, vokal, group = lange, pch.tokens = vokal, cex.tokens = 1.2, 
+    alpha.tokens = 0.3, plot.means = TRUE, pch.means = vokal, cex.means = 2, var.col.by = lange, 
+    var.sty.by = lange, hull.fill = TRUE, hull.line = TRUE, fill.opacity = 0.1, 
+    pretty = TRUE))
+# 3. Close the file
+dev.off()
 
 ```
 
@@ -518,5 +540,16 @@ toplot %>%
   ggplot(aes(diph.names.ipa, data.sample)) +
   geom_point() +
   labs(title = 'IPA Symbols in R Graph')
+
+# 1. Open jpeg file
+jpeg("pictures/ipa_symbols.jpg", 
+     width = 840, height = 535)
+# 2. Create the plot
+toplot %>% 
+  ggplot(aes(diph.names.ipa, data.sample)) +
+  geom_point() +
+  labs(title = 'IPA Symbols in R Graph')
+# 3. Close the file
+dev.off()
 
 ```
