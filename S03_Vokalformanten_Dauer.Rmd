@@ -311,7 +311,7 @@ library(ggrepel)
        x = "Formant F2: << vorne - hinten >>")
  )
 
-ggsave("pictures/messungen_tp_vokalformanten_ipa.jpg", dpi = 300, width = 10, height = 10)
+ggsave("pictures/messungen_tp_vokalformanten_ipa.jpg", dpi = 100, width = 10, height = 10)
 
 library(plotly)
 ggplotly(graph6) %>% layout(showlegend = FALSE)
