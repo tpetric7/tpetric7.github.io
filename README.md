@@ -27,7 +27,7 @@
 * Basic NLP tasks
 - [Quanteda & tidyverse](docs/Sawyer_Prozess.md)
 - [Using regular expressions](docs/Regex_in_quanteda.md)
-- [Sentiment Viewer](docs/sentiment_prozess_tom.html)
+- Sentiment Viewer [html](docs/sentiment_prozess_tom.html)
 
 * [Vowel Formant Plots](docs/S03_Vokalformanten_Dauer.md)
 
