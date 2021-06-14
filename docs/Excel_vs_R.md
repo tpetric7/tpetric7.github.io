@@ -1,7 +1,7 @@
 ---
 title: "Excel napredno 1. del"
 author: "Teodor Petrič"
-date: "21 5 2021"
+date: "2021-5-21"
 output: html_document
 ---
 

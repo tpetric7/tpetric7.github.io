@@ -1,7 +1,7 @@
 ---
 title: "Chi-Quadrat-Test mit Plural-Datensatz"
 author: "Teodor Petrič"
-date: "20 4 2021"
+date: "2021-4-20"
 output: html_document
 ---
 

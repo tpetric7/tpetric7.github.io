@@ -1,7 +1,7 @@
 ---
 title: "Vokalformanten"
 author: "Teodor Petrič"
-date: "17 3 2021"
+date: "2021-3-17"
 output: html_document
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: "Download unzip dir list"
 author: "Teodor Petrič"
-date: "3 6 2021"
+date: "2021-6-3"
 output: html_document
 ---
 
