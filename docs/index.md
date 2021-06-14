@@ -3,34 +3,24 @@
 
 ## RAJ 2021, Exercises with R/RStudio:
 
-- [File Management:]
-(download unzip dir.md)
-(Odpiranje in shranjevanje.md)
+* [File Management](docs/download unzip dir.md)
+- [File Management](docs/Odpiranje in shranjevanje.md)
 
-- [Chi square test:]
-(kommentare_chisq.md)
-(kommentare_chisq.R)
-(plural_chisq1.md)
-(plural_chisq2.md)
-(Modalkonstruktionen_chisq3.md)
+* [Chi square test](docs/kommentare_chisq.md)
+- [Chi square test](docs/kommentare_chisq.R)
+- [Chi square test](docs/plural_chisq1.md) (docs/plural_chisq2.md) (docs/Modalkonstruktionen_chisq3.md)
 
-- [t test:]
-(t preskus.md)
+* [t test](docs/t preskus.md)
 
-- [Ordinary least squares Regression:]
-(politeness.md)(Politeness.R)
+* [Ordinary least squares Regression](docs/politeness.md)
+- [Ordinary least squares Regression](docs/Politeness.R)
 
-- [Excel functions compared to R tidyverse: xlookup]
-(Excel vs R.md)
+* [Excel functions compared to R tidyverse: xlookup](docs/Excel vs R.md)
 
-- [Basic NLP tasks using quanteda:]
-(Sawyer_Prozess.md)
+* [Basic NLP tasks using quanteda](docs/Sawyer_Prozess.md)
+- [NLP: Using regular expressions:](docs/Regex in quanteda.md)
 
-- [NLP: Using regular expressions:]
-(Regex in quanteda.md)
+* [Vowel Formant Plots](docs/S03_Vokalformanten_Dauer.md)
 
-- [Vowel formants:]
-(S03_Vokalformanten_Dauer.md)
-
-- [Sentiment reader](sentiment_prozess_tom.html) 
-- Article: [PDF](Spiegel_Leichter_gendern.pdf)
+* [Sentiment Viewer](sentiment_prozess_tom.html) 
+* Article on Gendering: [PDF](Spiegel_Leichter_gendern.pdf)
