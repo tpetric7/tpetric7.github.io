@@ -2,7 +2,10 @@
 title: "Vokalformanten"
 author: "Teodor Petrič"
 date: "17 3 2021"
-output: html_document
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -83,8 +86,9 @@ df <- rbind(df0,df1a,df1b,df2,df3,df4,df5)
 # IPA suchen
 
 ```{r}
-library(linguisticsdown)
-writeIPA()
+# # uncomment code below if needed
+# library(linguisticsdown)
+# writeIPA()
 
 ```
 
