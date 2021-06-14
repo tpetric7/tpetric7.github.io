@@ -1,7 +1,7 @@
 ---
 title: "Branje in shranjevanje"
 author: "Teodor Petrič"
-date: "2021/6/9"
+date: "2021-6-9"
 output: html_document
 ---
 
