@@ -2,7 +2,7 @@
 
 ## RAJ 2021, Exercises with R/RStudio:
 
-* [File Management](download_unzip_dir.md)
+* [File Management](download_unzip_list_list_dir.md)
 - [File Management](Odpiranje_in_shranjevanje.md)
 
 * [Chi square test](kommentare_chisq.md)
