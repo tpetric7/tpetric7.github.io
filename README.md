@@ -30,7 +30,7 @@
 
 * [Vowel Formant Plots](docs/S03_Vokalformanten_Dauer.md)
 
-### OLS Regression
+#### OLS Regression
 
 ``` r
 m <- lm(frequency ~ gender + attitude, data=polite)
@@ -47,7 +47,7 @@ plot(allEffects(m), multiline=TRUE, grid=TRUE, rug=FALSE, as.table=TRUE)
 
 ![Plot 2](pictures/politeness_lineplot.jpg)
 
-### NLP
+#### NLP
 
 ``` r
 library(readtext)
@@ -62,6 +62,6 @@ textplot_xray(kwic_frau)
 
 ![Plot 3](pictures/kwic_xray_frau.png)
 
-### Vowel formants in L1 / L2 German
+#### Vowel formants in L1 / L2 German
 
 ![Plot 4](pictures/messungen_tp_vokalformanten_ipa.jpg) ![Plot 5](pictures/vokalformanten_interaktiv_l1_l2_lang_kurz.png)
