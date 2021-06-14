@@ -1,0 +1,279 @@
+---
+title: "Normal distribution"
+author: "Teodor Petrič"
+date: "14 6 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 0. Packages
+
+```{r}
+library(tidyverse)
+
+```
+
+# 0. Data
+
+```{r}
+metode <- read.csv("data/ttest2a.csv", dec=",")
+glimpse(metode)
+```
+
+```{r}
+mean(metode$Resultat)
+sd(metode$Resultat)
+
+```
+
+```{r}
+qplot(Methode, Resultat, color = Methode, data = metode)
+
+```
+
+
+```{r}
+qplot(Methode, Resultat, fill = Methode, geom = c("boxplot", "jitter"), 
+      data = metode) # facets = Resultat ~ Methode, 
+```
+
+
+```{r}
+hist(metode$Resultat, col = 2)
+
+```
+
+```{r}
+metode %>% 
+  mutate(sample = scale(Resultat)) %>% 
+  ggplot(aes(sample, fill = Methode)) +
+  geom_histogram(binwidth = 0.5, color = "black") +
+  facet_wrap(~ Methode) +
+  theme(legend.position = "none")
+
+```
+
+
+```{r}
+metode %>% 
+  mutate(sample = scale(Resultat)) %>% 
+  ggplot(aes(sample, fill = Methode)) + 
+  geom_density(alpha = 0.5)
+
+```
+
+
+```{r}
+metode %>% 
+  mutate(sample = scale(Resultat)) %>% 
+  ggplot(aes(Methode, sample, fill = Methode)) + 
+  geom_boxplot() +
+  # geom_tile(stat = "identity") +
+  geom_jitter(width = 0.05, color = "grey30") +
+  theme(legend.position = "none")
+
+```
+
+
+```{r}
+x <- metode[,2] %>% as.matrix()
+d <- dist(x)
+image(as.matrix(d), col = rev(RColorBrewer::brewer.pal(9, "RdBu")))
+
+```
+
+
+
+# 1. Normal distribution
+
+https://pubs.wsb.wisc.edu/academics/analytics-using-r-2019/
+
+The normal distribution is used if the variable is continuous. We usually refer to the density of a normal random variable as a bell-shaped curve. We require a value for the mean and another for the standard deviation to simulate a value from a normal distribution.(The mean and standard deviation (or variance) are the parameters of a normal distribution.)
+
+```{r}
+set.seed(123)
+normal <- rnorm(n = 1000, mean = 32, sd = 9)
+hist(normal, breaks = 10, col = 6)
+
+```
+
+```{r}
+as.data.frame(normal) %>% 
+  mutate(sample = scale(normal)) %>% 
+  ggplot(aes(sample)) + 
+  geom_density(fill = "magenta", alpha = 0.5) +
+  theme(legend.position = "none")
+
+```
+
+
+```{r}
+as.data.frame(normal) %>% 
+  mutate(sample = scale(normal)) %>% 
+  ggplot(aes(y = sample)) + 
+  geom_boxplot(fill = "magenta", alpha = 0.5) +
+  theme(legend.position = "none")
+
+```
+
+
+
+```{r}
+# install.packages("psych)
+library(psych)
+describe(normal)
+
+```
+
+## t test
+
+No significant difference (p = 0.975):
+
+```{r}
+t.test(metode$Resultat, normal)
+
+```
+
+## Normality test
+
+```{r}
+qqnorm(Resultat)
+qqline(normal, distribution = qnorm, probs = c(0.25, 0.75), qtype = 7, col = 2, lty = 1)
+
+```
+
+```{r}
+params <- metode %>%
+  summarize(mean = mean(Resultat), sd = sd(Resultat))
+
+metode %>% group_by(Methode) %>%
+  ggplot(aes(sample = scale(Resultat))) + 
+  geom_qq(distribution = qnorm, line.p = c(0.25, 0.75)) +
+  geom_abline(color = "red")
+
+metode %>% group_by(Methode) %>%
+  ggplot(aes(sample = (Resultat))) + 
+  geom_qq(dparams = params) +
+  geom_abline(color = "red")
+
+```
+
+
+```{r}
+shapiro.test(metode$Resultat)
+shapiro.test(normal)
+
+```
+
+## Regression
+
+No significant difference between method A and B.
+
+```{r}
+model <- lm(Resultat ~ Methode, data = metode)
+summary(model)
+```
+
+# 2. Chi squared distribution
+
+cf. https://pubs.wsb.wisc.edu/academics/analytics-using-r-2019/
+
+```{r}
+set.seed(2)
+y <- rchisq(384, df = 2)
+hist(y)
+
+```
+
+
+```{r}
+## Q-Q plot for Chi^2 data against true theoretical distribution:
+qqplot(qchisq(ppoints(384), df = 2), y,
+       main = expression("Q-Q plot for" ~~ {chi^2}[nu == 2]))
+qqline(y, distribution = function(p) qchisq(p, df = 2),
+       probs = c(0.1, 0.6), col = 2)
+mtext("qqline(*, dist = qchisq(., df=2), prob = c(0.1, 0.6))")
+
+## (Note that the above uses ppoints() with a = 1/2, giving the
+## probability points for quantile type 5: so theoretically, using
+## qqline(qtype = 5) might be preferable.) 
+
+```
+
+
+# 3. Binomial distribution
+
+cf. https://pubs.wsb.wisc.edu/academics/analytics-using-r-2019/
+
+A special case of a categorical variable is an indicator variable, sometimes referred to as a binary or dummy variable. The underlying distribution of an indicator variable is called a Bernoulli distribution.
+
+```{r}
+set.seed(123)
+# Simulating indicator variables is completed using the rbinom function. Here, we simulate 5 values of heads with a probability of 1/2 of getting a head on each flip
+bnom <- rbinom(n = 40, size = 1, prob = 0.5)
+hist(bnom, breaks = 10)
+
+```
+
+
+```{r}
+library(psych)
+describe(bnom)
+
+```
+
+# 4. Poisson distribution
+
+cf. https://pubs.wsb.wisc.edu/academics/analytics-using-r-2019/
+
+Another discrete distribution that you may learn is called the Poisson distribution that is used to predict counts of some event that occur within a given time interval. For example, recording the number of car accidents that you have in a year.
+
+```{r}
+set.seed(123)
+# Here in addition to the number of values to simulate, we just need the parameter for the mean (called lambda).
+pois <- rpois(n = 40, lambda = 32)
+hist(pois, breaks = 10)
+
+```
+
+
+```{r}
+library(psych)
+describe(pois)
+
+```
+
+# 5. Gamma distribution
+
+cf. https://pubs.wsb.wisc.edu/academics/analytics-using-r-2019/
+
+Another continuous distribution that you may learn is called the Gamma distribution. This distribution is used for random variables that have some skewness and is not symmetrical, like the Normal Distribution.
+
+The Gamma distribution requires a little more background to understand how to define the parameters.
+
+There is a R function for simulating this random variable. Here in addition to the number of values to simulate, we just need two parameters, one for the shape and one for either the rate or the scale. The rate is the inverse of the scale. The general formula is: rgamma(n, shape, rate = 1, scale = 1/rate).
+
+Given that α
+is the shape parameter and β is the rate or scale parameter, then if you are thinking of a Gamma random variable, where the mean = α∗β, then you use the scale for simulating. Otherwise, you use the rate.
+
+
+```{r}
+set.seed(1)
+x <- rgamma(n = 40, shape = 3, scale = 2)
+# And verifying the mean equal to 6 (shape*scale):
+mean(x)
+
+```
+
+
+```{r}
+set.seed(1)
+x <- rgamma(n = 40, shape = 3, rate = 0.5)
+# Or verifying the mean equal to 6 (shape*1/rate):
+mean(x)
+
+```
+
