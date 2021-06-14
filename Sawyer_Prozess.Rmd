@@ -1,7 +1,7 @@
 ---
 title: "Tom Sawyer vs Der Prozess"
 author: "Teodor Petrič"
-date: "19 5 2021"
+date: "2021-5-19"
 output: html_document
 editor_options: 
   chunk_output_type: console #inline

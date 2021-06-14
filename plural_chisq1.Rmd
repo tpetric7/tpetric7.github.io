@@ -1,7 +1,7 @@
 ---
 title: "Plural von Kunstwörtern"
 author: "Teodor Petrič"
-date: "14 4 2021"
+date: "2021-4-14"
 output: html_document
 ---
 

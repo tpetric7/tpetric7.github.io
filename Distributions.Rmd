@@ -1,7 +1,7 @@
 ---
 title: "Normal distribution"
 author: "Teodor Petrič"
-date: "14 6 2021"
+date: "2021-6-14"
 output: html_document
 ---
 

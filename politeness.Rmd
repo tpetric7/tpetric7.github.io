@@ -1,7 +1,7 @@
 ---
 title: "Politeness"
 author: "Teodor Petrič"
-date: "23 2 2021"
+date: "2021-2-23"
 output: html_document
 ---
 

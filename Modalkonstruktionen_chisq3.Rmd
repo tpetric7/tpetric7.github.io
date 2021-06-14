@@ -1,7 +1,7 @@
 ---
 title: "Morati vs. Treba"
 author: "Teodor Petrič"
-date: "14 5 2021"
+date: "2021-5-14"
 output: html_document
 ---
 

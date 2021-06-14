@@ -1,7 +1,7 @@
 ---
 title: "Lange und kurze Kommentare"
 author: "Teodor Petrič"
-date: "7 4 2021"
+date: 2021-4-7"
 output: html_document
 ---
 
