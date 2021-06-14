@@ -1,4 +1,3 @@
-
 # tpetric7.github.io
 
 ## RAJ 2021, Exercises with R/RStudio:
@@ -22,5 +21,8 @@
 
 * [Vowel Formant Plots](docs/S03_Vokalformanten_Dauer.md)
 
-* [Sentiment Viewer](sentiment_prozess_tom.html) 
-* Article on Gendering: [PDF](Spiegel_Leichter_gendern.pdf)
+
+![Plot 1](pictures/politeness_boxplot.jpg)
+![Plot 2](pictures/politeness_lineplot.jpg)
+![Plot 3](pictures/kwic_xray_frau.png)
+![Plot 4](pictures/messungen_tp_vokalformanten_ipa.jpg) ![Plot 5](pictures/vokalformanten_interaktiv_l1_l2_lang_kurz.png)
