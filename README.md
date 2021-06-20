@@ -1,6 +1,6 @@
 # tpetric7.github.io
 
-## RAJ 2021, Exercises with R/RStudio:
+## RAJ 2021, Exercises with R/RStudio: 
 
 ### File Management 
 - [Download, unzip, list & dir](docs/download_unzip_list_dir.md)
