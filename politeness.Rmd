@@ -5,6 +5,9 @@ date: "2021-2-23"
 output:
   pdf_document: default
   html_document: default
+editor_options: 
+  markdown: 
+    wrap: 80
 ---
 
 ```{r setup, include=FALSE}
@@ -14,19 +17,23 @@ library(scales)
 # detach("package:rlang", unload=TRUE)
 ```
 
-Datensatz von: Bodo Winter 
-Thema: Politeness and Pitch (F0)
-(cf. http://www.bodowinter.com/tutorial/bw_LME_tutorial1.pdf)
-(cf. https://bodowinter.com/tutorial/bw_LME_tutorial.pdf)
+Datensatz von: Bodo Winter Thema: Politeness and Pitch (F0)
 
+(cf. <http://www.bodowinter.com/tutorial/bw_LME_tutorial1.pdf>)
 
-### Gliederung unserer quantitativen Analyse
-#### 1. Laden der Datei
-#### 2. Kennenlernen der Daten und Säubern
-#### 3. Hypothesen
-#### 4. Test und Ergebnisse
-#### 5. Schluss
+(cf. <https://bodowinter.com/tutorial/bw_LME_tutorial.pdf>)
 
+Gliederung unserer quantitativen Analyse
+
+1\. Laden der Datei
+
+2\. Kennenlernen der Daten und Säubern
+
+3\. Hypothesen
+
+4\. Test und Ergebnisse
+
+5\. Schluss
 
 ## 1. Datei laden
 
@@ -35,7 +42,6 @@ Thema: Politeness and Pitch (F0)
 politeness <- read.csv("data/politeness_data.csv")
 
 ```
-
 
 ## 2. Kennenlernen der Daten und Säubern
 
@@ -50,9 +56,8 @@ head(politeness)
 glimpse(politeness)
 ```
 
-
-Am Experiment nahmen 6 Versuchspersonen teil (F1, ..., M7)
-Von jeder Versuchsperson (subject) haben wir 14 Messpunkte (n = 14).
+Am Experiment nahmen 6 Versuchspersonen teil (F1, ..., M7). Von jeder
+Versuchsperson (subject) haben wir 14 Messpunkte (n = 14).
 
 ```{r}
 politeness %>% 
@@ -66,7 +71,8 @@ politeness %>%
   count(subject, gender)
 ```
 
-Pro Verhaltensweise stehen uns 42 Messpunkte zur Verfügung, um unsere (unten folgende) Hypothese zu überprüfen.
+Pro Verhaltensweise stehen uns 42 Messpunkte zur Verfügung, um unsere (unten
+folgende) Hypothese zu überprüfen.
 
 ```{r}
 politeness %>% 
@@ -80,7 +86,8 @@ politeness %>%
   mean(frequency)
 ```
 
-"NA": In unserer Datenreihe fehlt eine Frequenz. Wir entfernen diese Datenzeile, um die durchschnittliche Frequenz (mean) zu berechnen.
+"NA": In unserer Datenreihe fehlt eine Frequenz. Wir entfernen diese Datenzeile,
+um die durchschnittliche Frequenz (mean) zu berechnen.
 
 ```{r}
 politeness %>% 
@@ -88,7 +95,8 @@ politeness %>%
   summarise(av_freq = mean(frequency))
 ```
 
-Wir haben gerade die Durchschnittsfrequenz für alle Versuchspersonen berechnet. Berechnen wir sie nun getrennt nach weiblichen und männlichen Versuchspersonen!
+Wir haben gerade die Durchschnittsfrequenz für alle Versuchspersonen berechnet.
+Berechnen wir sie nun getrennt nach weiblichen und männlichen Versuchspersonen!
 
 ```{r}
 politeness %>% 
@@ -97,10 +105,13 @@ politeness %>%
   summarise(av_freq = mean(frequency))
 ```
 
-Erwartungsgemäß ist der Durchschnittswert bei Frauen höher als bei Männern: Frauen haben meist eine höhere Stimme als Männer.
+Erwartungsgemäß ist der Durchschnittswert bei Frauen höher als bei Männern:
+Frauen haben meist eine höhere Stimme als Männer.
 
-Ein Blick auf die Durchschnittsfrequenzen bei höflicher und informeller Sprechweise:
-In unserer Stichprobe mit 6 Versuchspersonen (je 14 Frequenzmessungen) zeigt sich ein Unterschied von etwa 18,2 Hz, und zwar 202,59 - 184,36.
+Ein Blick auf die Durchschnittsfrequenzen bei höflicher und informeller
+Sprechweise: In unserer Stichprobe mit 6 Versuchspersonen (je 14
+Frequenzmessungen) zeigt sich ein Unterschied von etwa 18,2 Hz, und zwar 202,59
+- 184,36.
 
 ```{r}
 politeness %>% 
@@ -110,7 +121,6 @@ politeness %>%
             sd_freq = sd(frequency))
 
 ```
-
 
 ```{r}
 # politeness %>% 
@@ -122,30 +132,37 @@ politeness %>%
 
 ```
 
-
 ## 3. Hypothesen
 
-H0: Der durchschnittliche Grundfrequenzverlauf (F0) bei höflichem oder informellem Sprechverhalten (attitude) ist gleich.
+H0: Der durchschnittliche Grundfrequenzverlauf (F0) bei höflichem oder
+informellem Sprechverhalten (attitude) ist gleich.
 
-H1: Der durchschnittliche Grundfrequenzverlauf (F0) bei höflichem Sprechverhalten unterscheidet sich vom informellen.
+H1: Der durchschnittliche Grundfrequenzverlauf (F0) bei höflichem
+Sprechverhalten unterscheidet sich vom informellen.
 
-Nach unserem bisherigen Wissen erwarten wir, dass unsere Daten die Hypothese H1 bestätigen werden.
+Nach unserem bisherigen Wissen erwarten wir, dass unsere Daten die Hypothese H1
+bestätigen werden.
 
-Das überprüfen wir zunächst mit einem t-Test, anschließend mit einer linearen Regression.
-
+Das überprüfen wir zunächst mit einem t-Test, anschließend mit einer linearen
+Regression.
 
 ## 4. Test
 
 t-Test
 
-Zunächst ein Blick auf die Durchschnittsfrequenzen bei höflicher und informeller Sprechweise.
-In unserer Stichprobe mit 6 Versuchspersonen (je 14 Frequenzmessungen) zeigt sich ein Unterschied von etwa 18,2 Hz. 
+Zunächst ein Blick auf die Durchschnittsfrequenzen bei höflicher und informeller
+Sprechweise. In unserer Stichprobe mit 6 Versuchspersonen (je 14
+Frequenzmessungen) zeigt sich ein Unterschied von etwa 18,2 Hz.
 
-Gemäß Hypothese H1 ist der Unterschied nicht zufällig entstanden, sondern kann auf die Gesamtpopulation deutscher Sprecher verallgemeinert werden. 
+Gemäß Hypothese H1 ist der Unterschied nicht zufällig entstanden, sondern kann
+auf die Gesamtpopulation deutscher Sprecher verallgemeinert werden.
 
-Nicht so gemäß Hypothese H0: Der Mittelwertunterschied zwischen den Stichproben kann zufällig entstanden sein, denn wenn wir eine andere Stichprobe genommen hätten, wäre der Unterschied vielleicht gleich Null gewesen.
+Nicht so gemäß Hypothese H0: Der Mittelwertunterschied zwischen den Stichproben
+kann zufällig entstanden sein, denn wenn wir eine andere Stichprobe genommen
+hätten, wäre der Unterschied vielleicht gleich Null gewesen.
 
-Mit statistischen Tests können wir diese beiden Hypothesen überprüfen. Einer davon ist der t-Test.
+Mit statistischen Tests können wir diese beiden Hypothesen überprüfen. Einer
+davon ist der t-Test.
 
 ```{r}
 politeness %>% 
@@ -156,13 +173,12 @@ politeness %>%
 
 ```
 
-Der t-Test bestätigt H1 nicht (p > 0,05):
+Der t-Test bestätigt H1 nicht (p \> 0,05):
 
 ```{r}
 t.test(frequency ~ attitude, data = politeness, paired = F, var.equal = T)
 
 ```
-
 
 ```{r}
 pol = politeness$frequency[politeness$attitude == "pol"]
@@ -170,7 +186,6 @@ inf = politeness$frequency[politeness$attitude == "inf"]
 t.test(pol, inf)
 
 ```
-
 
 ```{r}
 polite <- politeness %>% 
@@ -187,8 +202,10 @@ t.test(polite, informal)
 
 ```
 
-
-Die lineare Regression hat den großen Vorteil, dass man mehr als eine unabhängige Variable (Prädiktor) verwenden kann, um die Hypothese zu testen. Wir wählen Geschlecht (gender) und Sprechverhalten (attitude) als unabhängige Variablen, der Grundfrequenzverlauf (frequency) ist die abhängige Variable.
+Die lineare Regression hat den großen Vorteil, dass man mehr als eine
+unabhängige Variable (Prädiktor) verwenden kann, um die Hypothese zu testen. Wir
+wählen Geschlecht (gender) und Sprechverhalten (attitude) als unabhängige
+Variablen, der Grundfrequenzverlauf (frequency) ist die abhängige Variable.
 
 ```{r}
 politeness %>% 
@@ -197,10 +214,14 @@ politeness %>%
   summary()
 ```
 
-Die lineare Regression bestätigt die Hypothese H1: F(2;80 = 98,38; p < 0,001).
-Die Versuchspersonen sprechen demnach in einer anderen Tonlage, wenn sie höflich sprechen, und zwar um ca. 19,5 Hz tiefer als wenn sie informell sprechen (p = 0,0146). 
-Außerdem bestätigt die lineare Regression (erwartungsgemäß) auch, dass die männlichen Versuchspersonen mit einer tieferen Stimme sprechen als die weiblichen, und zwar um durchschnittlich 108 Hz. 
-Der R^2-Wert beträgt 0,71 (d.h. etwa 71%). Das bedeutet, dass mit dem Regressionsergebnis ca. 71% der Variabilität unserer Daten erklärt wird. 
+Die lineare Regression bestätigt die Hypothese H1: F(2;80 = 98,38; p \< 0,001).
+Die Versuchspersonen sprechen demnach in einer anderen Tonlage, wenn sie höflich
+sprechen, und zwar um ca. 19,5 Hz tiefer als wenn sie informell sprechen (p =
+0,0146). Außerdem bestätigt die lineare Regression (erwartungsgemäß) auch, dass
+die männlichen Versuchspersonen mit einer tieferen Stimme sprechen als die
+weiblichen, und zwar um durchschnittlich 108 Hz. Der R\^2-Wert beträgt 0,71
+(d.h. etwa 71%). Das bedeutet, dass mit dem Regressionsergebnis ca. 71% der
+Variabilität unserer Daten erklärt wird.
 
 ```{r}
 politeness %>% 
@@ -221,7 +242,10 @@ plot(allEffects(m), multiline=TRUE, grid=TRUE, rug=FALSE, as.table=TRUE)
 
 ```
 
-
 ## 5. Schluss
 
-Die Regressionsanalyse hat H1 bestätigt, d.h. die Grundfrequenz beim höflichen Sprechen unterscheidet sich vom informellen Sprechen. Beim höflichen Sprechen sprachen die Versuchspersonen mit einer durchschnittlich 19,5 Hz tieferen Stimme (bei den weiblichen Versuchspersonen ca. 27 Hz, bei den männlichen mehr als 11 Hz).
+Die Regressionsanalyse hat H1 bestätigt, d.h. die Grundfrequenz beim höflichen
+Sprechen unterscheidet sich vom informellen Sprechen. Beim höflichen Sprechen
+sprachen die Versuchspersonen mit einer durchschnittlich 19,5 Hz tieferen Stimme
+(bei den weiblichen Versuchspersonen ca. 27 Hz, bei den männlichen mehr als 11
+Hz).
