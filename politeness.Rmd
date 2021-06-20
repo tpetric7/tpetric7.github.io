@@ -1,5 +1,5 @@
 ---
-title: "Politeness"
+title: "Höflichkeit und Grundfrequenz"
 author: "Teodor Petrič"
 date: "2021-2-23"
 output: html_document
@@ -12,17 +12,19 @@ library(scales)
 # detach("package:rlang", unload=TRUE)
 ```
 
-Data: Bodo Winter
-
-1. Laden der Datei
-2. Kennenlernen der Daten und Säubern
-3. Hypothesen
-4. Test und Ergebnisse
-5. Schluss
+Datensatz von: Bodo Winter 
+Thema: Politeness and Pitch (F0)
+(cf. http://www.bodowinter.com/tutorial/bw_LME_tutorial1.pdf)
+(cf. https://bodowinter.com/tutorial/bw_LME_tutorial.pdf)
 
 
-# Höflichkeit und Grundfrequenzverlauf F0
-(Politeness and Frequency F0)
+### Gliederung unserer quantitativen Analyse
+#### 1. Laden der Datei
+#### 2. Kennenlernen der Daten und Säubern
+#### 3. Hypothesen
+#### 4. Test und Ergebnisse
+#### 5. Schluss
+
 
 ## 1. Datei laden
 

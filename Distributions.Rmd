@@ -140,14 +140,14 @@ t.test(metode$Resultat, normal)
 ## Normality test
 
 ```{r}
-qqnorm(Resultat)
+qqnorm(metode$Resultat)
 qqline(normal, distribution = qnorm, probs = c(0.25, 0.75), qtype = 7, col = 2, lty = 1)
 
 ```
 
 ```{r}
 params <- metode %>%
-  summarize(mean = mean(Resultat), sd = sd(Resultat))
+  summarise(mean = mean(Resultat), sd = sd(Resultat))
 
 metode %>% group_by(Methode) %>%
   ggplot(aes(sample = scale(Resultat))) + 

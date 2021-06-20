@@ -75,3 +75,8 @@ textplot_xray(kwic_frau)
 
 ![Plot 4](pictures/messungen_tp_vokalformanten_ipa.jpg) 
 ![Plot 5](pictures/vokalformanten_interaktiv_l1_l2_lang_kurz.png)
+
+
+Convert Rmd to R script: knitr::purl("plural_chisq1.Rmd", documentation = 2)
+Convert R to Rmd: [Ctrl + Shift + K] or [knitr::spin("t_preskus.R")]
+Cf. https://bookdown.org/yihui/rmarkdown-cookbook/spin.html

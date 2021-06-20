@@ -84,15 +84,22 @@ Privzeto spodnji programi shranjujejo v obliki (codepage) encoding = "UTF-8" / f
 
 ```{r}
 library(tidyverse)
+
 # shranjevanje posamičnega besedila
 write_lines(besedilo, "moje_besedilo.txt")
+
 # shranjevanje tabele, v kateri je zbirka besedil
 write_csv2(besedila, "moja_tabela_z_besedili.csv")
+
 library(writexl)
 # shranjevanje preglednice
 write_xlsx(tabela, "moja_tabela.xlsx")
+
 # shranjevanje tabele, v kateri je zibrka besedil
-write_xlsx(besedila, "moja_tabela_z_besedili.xlsx")
+# Excel dovoljuje do 32767 znakov.
+# ta zbirko presega to mejo, zato je ne moremo shraniti v Excelovi preglednici
+
+# write_xlsx(besedila, "moja_tabela_z_besedili.xlsx")
 
 ```
 

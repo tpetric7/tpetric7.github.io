@@ -22,8 +22,10 @@ Eine Lehrerin möchte wissen, ob es effektiver ist, wenn sie am Rand der Schüle
 
 ```{r}
 # von github laden
-kommentare = read.delim("https://raw.githubusercontent.com/tpetric7/chi-sq/main/data/chisq_kommentare.txt",
-                        sep = "\t", fileEncoding = "UTF-8")
+kommentare = read.delim(
+  "https://raw.githubusercontent.com/tpetric7/tpetric7.github.io/main/data/chisq_kommentare.txt",
+  sep = "\t", fileEncoding = "UTF-8")
+
 # Variablennamen konsequent schreiben
 kommentare = kommentare %>% 
   clean_names()

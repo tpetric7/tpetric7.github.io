@@ -3,8 +3,8 @@ title: "Vokalformanten"
 author: "Teodor Petrič"
 date: "2021-3-17"
 output:
-  word_document: default
   html_document: default
+  word_document: default
   pdf_document: default
 ---
 
