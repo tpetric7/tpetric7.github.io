@@ -1,8 +1,14 @@
 ---
-output:
-  pdf_document: default
-  html_document: default
+title: "Readme"
+author: "Teodor Petrič"
+date: "2021-06-21"
+output: html_document
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 # tpetric7.github.io
 
 ## RAJ 2021, Exercises with R/RStudio:
