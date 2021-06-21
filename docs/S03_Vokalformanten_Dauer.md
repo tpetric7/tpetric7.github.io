@@ -282,7 +282,7 @@ ggplotly(graph5) %>% layout(showlegend = FALSE)
 
 ```
 
-Messungen von TP mit Praat-Script (--> Matt Winn)
+Messungen von TP mit Praat-Script (👉 Matt Winn)
 
 ```{r}
 library(ggrepel)
