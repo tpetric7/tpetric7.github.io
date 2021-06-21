@@ -18,6 +18,8 @@ options(encoding = "UTF-8")
 
 ```
 
+# Programme starten
+
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 library(scales)
@@ -286,7 +288,7 @@ ggplotly(graph5) %>% layout(showlegend = FALSE)
 
 ```
 
-Messungen von TP mit Praat-Script (--> Matt Winn)
+Messungen von TP mit Praat-Script (--> Matt Winn: https://github.com/mwinn83)
 
 ```{r}
 library(ggrepel)
