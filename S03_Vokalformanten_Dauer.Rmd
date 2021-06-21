@@ -288,7 +288,7 @@ ggplotly(graph5) %>% layout(showlegend = FALSE)
 
 ```
 
-Messungen von TP mit Praat-Script (--> Matt Winn: https://github.com/mwinn83)
+Messungen von TP mit Praat-Script (👉 Matt Winn: https://github.com/mwinn83)
 
 ```{r}
 library(ggrepel)
