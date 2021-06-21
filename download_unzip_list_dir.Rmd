@@ -9,6 +9,15 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+
+Basic operations in R:
+- Download (zip) files
+- Extract compressed files to a folder
+- Check & Create a folder or subfolders
+- List & Read files in a folder
+
+
 # Download
 
 ```{r}
