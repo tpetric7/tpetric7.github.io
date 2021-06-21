@@ -1,9 +1,18 @@
 ---
-title: "Vokalformanten"
-author: "Teodor Petrič"
-date: "2021-3-17"
-output: html_document
+title: Vowel formants in German as a foreign language
+author: Teodor Petrič
+date: '2021-06-21'
+slug: vowel-formants-in-german-as-a-foreign-language
+categories:
+  - R
+tags:
+  - R Markdown
+  - German 
+  - vowel 
+  - formant 
+  - language acquisition
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -14,6 +23,8 @@ Sys.setlocale("LC_ALL", "German")
 options(encoding = "UTF-8")
 
 ```
+
+# Programme starten
 
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -28,35 +39,27 @@ library(extrafont)
 # Daten laden
 
 ```{r}
-(vokale <- read_xlsx("data/S03_Vokalformanten_Diagramme.xlsx", sheet ="A1-4_alle") %>% 
+vokale <- read_xlsx("data/S03_Vokalformanten_Diagramme.xlsx", sheet ="A1-4_alle") %>% 
   janitor::clean_names() %>% 
   select(-studierende) %>% 
   mutate(geschlecht = "f") %>% 
   select(sprecherin, geschlecht, vokal, f1, f2, dauer, lange, wort, phrase) %>% 
   mutate(l1_l2 = ifelse(sprecherin == "Deutsche", "L1", "L2")) %>% 
   mutate(vokal = str_replace(vokal, "F:", "E:")) %>% 
-  mutate(vowel = vokal) # %>% 
-# mutate(vowel = str_replace(vowel, "ü\\:", "ii\\:"),
-#        vowel = str_replace(vowel, "Ü", "II"),
-#        vowel = str_replace(vowel, "ö\\:", "ee\\:"),
-#        vowel = str_replace(vowel, "Ö", "EE"))
-)
+  mutate(vowel = vokal)
+head(vokale)
 
-(vergleich <- read_xlsx("data/S03_Vokalformanten_Diagramme.xlsx", sheet ="A10_Vgl_L1_L2_tab") %>% 
+vergleich <- read_xlsx("data/S03_Vokalformanten_Diagramme.xlsx", sheet ="A10_Vgl_L1_L2_tab") %>% 
   janitor::clean_names() %>% 
   mutate(phonem = str_replace(phonem, "EE", "E:")) %>% 
   rename(f1_l1 = f1_in_hz,
          f2_l1 = f2_in_hz,
          dauer_l1 = dauer_in_ms,
          vokal = phonem)
-)
+head(vergleich)
 
 ```
 
-```{r}
-glimpse(vokale)
-
-```
 
 ```{r}
 df0 <- read.csv("data/Deutsche_formants.Table.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8") 
@@ -76,17 +79,10 @@ df4 <- df4 %>% mutate(speaker = "Jasmina")
 df5 <- df5 %>% mutate(speaker = "Teodor")
 
 df <- rbind(df0,df1a,df1b,df2,df3,df4,df5)
+head(df)
 
 ```
 
-
-# IPA suchen
-
-```{r}
-library(linguisticsdown)
-writeIPA()
-
-```
 
 # IPA syms
 
@@ -120,7 +116,7 @@ U = "ʊ"
 
 ipavow = c(a,A,e,E,EE,I,i,O,o,U,u,Y,y,OE,oe, schwa) %>%  as_tibble() %>% rename(vowel = value)
 
-(vergleich <- vergleich %>% cbind(ipavow) %>% select(-phonem_ipa_1, -phonem_ipa_2))
+vergleich <- vergleich %>% cbind(ipavow) %>% select(-phonem_ipa_1, -phonem_ipa_2)
 
 ```
 
@@ -158,7 +154,7 @@ vowel_lookup =
     
   )
 
-(df$IPA <- vowel_lookup[df$vowel])
+df$IPA <- vowel_lookup[df$vowel]
 
 ```
 
@@ -166,13 +162,13 @@ vowel_lookup =
 # Vergleich mit IPA
 
 ```{r}
-(vgl_pivot <- vergleich %>% 
+vgl_pivot <- vergleich %>% 
   group_by(vokal) %>% 
   pivot_longer(f1_l1:dauer_l2, names_to = "category", values_to = "value") %>% 
   separate(category, into = c("category", "l1_l2")) %>% 
   drop_na() %>% 
   pivot_wider(names_from = category, values_from = value)
-)
+head(vgl_pivot)
 
 # par(family='Charis SIL')
 (graph4 <- vgl_pivot %>% 
@@ -253,13 +249,13 @@ webshot("tmp.html","pictures/vokalformanten_interaktiv_l1_l2_lang_kurz.pdf", del
 
 
 ```{r}
-(vgl_pivot <- vergleich %>% 
+vgl_pivot <- vergleich %>% 
   group_by(vokal) %>% 
   pivot_longer(f1_l1:dauer_l2, names_to = "category", values_to = "value") %>% 
   separate(category, into = c("category", "l1_l2")) %>% 
   drop_na() %>% 
   pivot_wider(names_from = category, values_from = value)
-)
+head(vgl_pivot)
 
 (graph5 <- vgl_pivot %>% 
   drop_na() %>% 
@@ -282,7 +278,7 @@ ggplotly(graph5) %>% layout(showlegend = FALSE)
 
 ```
 
-Messungen von TP mit Praat-Script (👉 Matt Winn)
+Messungen von TP mit Praat-Script (👉 Matt Winn: https://github.com/mwinn83)
 
 ```{r}
 library(ggrepel)
@@ -307,7 +303,7 @@ library(ggrepel)
        x = "Formant F2: << vorne - hinten >>")
  )
 
-ggsave("pictures/messungen_tp_vokalformanten_ipa.jpg", dpi = 600)
+ggsave("pictures/messungen_tp_vokalformanten_ipa.jpg", dpi = 100, width = 10, height = 10)
 
 library(plotly)
 ggplotly(graph6) %>% layout(showlegend = FALSE)
@@ -335,9 +331,8 @@ ipavow2 = c(a,A,E,e,EE,I,i,O,OE,o,oe,U,Y,u,y) %>%  as_tibble() %>% rename(vowel 
 
 vokale_agg1 <- vokale_agg %>% filter(l1_l2 == "L1") %>% cbind(ipavow2)
 vokale_agg2 <- vokale_agg %>% filter(l1_l2 == "L2") %>% cbind(ipavow2)
-(vokale_agg <- rbind(vokale_agg1, vokale_agg2) %>% as_tibble())
-
-# c("i:","I","ü:","Ü","e:","E","ö:","Ö","E:","a:","a","o:","O","u:","U")
+vokale_agg <- rbind(vokale_agg1, vokale_agg2) %>% as_tibble()
+head(vokale_agg)
 
 ```
 
@@ -365,7 +360,6 @@ library(ggrepel)
 ```
 
 
-
 ```{r}
 (graph <- vokale_agg %>% 
   group_by(vokal, l1_l2, label = vowel) %>% 
@@ -389,13 +383,13 @@ ggplotly(graph) %>% layout(showlegend = FALSE)
 
 
 ```{r}
-(vgl_pivot <- vergleich %>% 
+vgl_pivot <- vergleich %>% 
   group_by(vokal) %>% 
   pivot_longer(f1_l1:dauer_l2, names_to = "category", values_to = "value") %>% 
   separate(category, into = c("category", "l1_l2")) %>% 
   drop_na() %>% 
   pivot_wider(names_from = category, values_from = value)
-)
+head(vgl_pivot)
 
 (graph2 <- vgl_pivot %>% 
   drop_na() %>% 
@@ -421,13 +415,13 @@ ggplotly(graph2) %>% layout(showlegend = FALSE)
 
 
 ```{r}
-(vgl_pivot <- vergleich %>% 
+vgl_pivot <- vergleich %>% 
   group_by(vokal) %>% 
   pivot_longer(f1_l1:dauer_l2, names_to = "category", values_to = "value") %>% 
   separate(category, into = c("category", "l1_l2")) %>% 
   drop_na() %>% 
   pivot_wider(names_from = category, values_from = value)
-)
+head(vgl_pivot)
 
 (graph3 <- vgl_pivot %>% 
   drop_na() %>% 
@@ -459,7 +453,19 @@ with(vokale_agg, plotVowels(f1_avg, f2_avg, vowel, group = lange, pch.tokens = v
     var.sty.by = lange, hull.fill = TRUE, hull.line = TRUE, fill.opacity = 0.1, 
     pretty = TRUE))
 
+# 1. Open jpeg file
+jpeg("pictures/phonR_vowel_space.jpg", 
+     width = 840, height = 535)
+# 2. Create the plot
+with(vokale_agg, plotVowels(f1_avg, f2_avg, vowel, group = lange, pch.tokens = vowel, cex.tokens = 1.2, 
+    alpha.tokens = 0.3, plot.means = TRUE, pch.means = vowel, cex.means = 2, var.col.by = vowel, 
+    var.sty.by = lange, hull.fill = TRUE, hull.line = TRUE, fill.opacity = 0.1, 
+    pretty = TRUE))
+# 3. Close the file
+dev.off()
+
 ```
+
 
 ```{r}
 library(phonR)
@@ -470,49 +476,17 @@ with(vokale, plotVowels(f1, f2, vokal, group = lange, pch.tokens = vokal, cex.to
     var.sty.by = lange, hull.fill = TRUE, hull.line = TRUE, fill.opacity = 0.1, 
     pretty = TRUE))
 
-```
-
-
-# IPA glyphs
-
-
-
-Author: Romeo Mlinar
-Mail: mlinar [a] languagebits.com
-Url: http://www.languagebits.com/?p=766
-
-```{r}
-# Diphthongs in ASCII 
-diph.names.ascii <- c('ey', 'ey', 'ay', 'ay', 'oy', 'oy',
-                  'ow', 'ow', 'aw', 'aw', 'ia', 'ia',
-                  'ea', 'ea', 'ua', 'ua')
+# 1. Open jpeg file
+jpeg("pictures/phonR_vowel_space2.jpg", 
+     width = 840, height = 535)
+# 2. Create the plot
+with(vokale, plotVowels(f1, f2, vokal, group = lange, pch.tokens = vokal, cex.tokens = 1.2, 
+    alpha.tokens = 0.3, plot.means = TRUE, pch.means = vokal, cex.means = 2, var.col.by = lange, 
+    var.sty.by = lange, hull.fill = TRUE, hull.line = TRUE, fill.opacity = 0.1, 
+    pretty = TRUE))
+# 3. Close the file
+dev.off()
 
 ```
 
 
-```{r}
-# Diphthong in hexadecimal values
-# Available from: http://www.phon.ucl.ac.uk/home/wells/ipa-unicode.htm
-diph.names.ipa <- c('e\u026A', 'a\u026A', '\u0254\u026A', 
-            '\u0259\u028A', '\u0251\u028A', '\u026A\u0259', 
-            '\u025B\u0259', '\u028A\u0259')
-
-```
-
-
-```{r}
-# Sample data
-data.sample <- c(1:8)
-
-# Make data frame for values
-toplot <- data.frame( diph.names.ipa, data.sample)
-
-#Draw a simple graph.
-# plot(toplot, main='IPA Symbols in R Graph')
-
-toplot %>% 
-  ggplot(aes(diph.names.ipa, data.sample)) +
-  geom_point() +
-  labs(title = 'IPA Symbols in R Graph')
-
-```
