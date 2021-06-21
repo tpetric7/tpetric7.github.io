@@ -21,14 +21,15 @@
 - [Politeness and Pitch, V1](docs/politeness.md)
 - [Politeness and Pitch, V2](docs/Politeness.R)
 
-* Excel functions compared to R tidyverse: 
+### Excel functions compared to R tidyverse: 
 - [xlookup](docs/Excel_vs_R.md)
 
-* Basic NLP tasks
+### Basic NLP tasks
 - [Quanteda & tidyverse](docs/Sawyer_Prozess.md)
 - [Using regular expressions](docs/Regex_in_quanteda.md)
 - Sentiment Viewer [html](docs/sentiment_prozess_tom.html)
 
+### Acoustic Phonetics
 * [Vowel Formant Plots](docs/S03_Vokalformanten_Dauer.md)
 
 #### OLS Regression
