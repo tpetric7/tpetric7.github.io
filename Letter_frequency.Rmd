@@ -1,0 +1,327 @@
+---
+title: "Letter frequency in novels"
+author: "Teodor Petrič"
+date: "21 7 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# 0. Packages
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(scales)
+library(readtext)
+# library(qdap) # syllable_count and syllable_sum
+# library(quanteda) # nsyllable(tokens(txt))
+```
+
+
+# 1. Open text files
+
+Die *readtext()*-Funktion erlaubt Einlesen von mehreren Dateien auf einfache Art und Weise.
+Mit *docvarsfrom* erhalten wird eine neue Spalte in der Tabelle, die wir mit der Funktion *rename()* umbenennen.
+Mit *encoding = "UTF-8"* teilen wir dem Programm mit, wie der Text kodiert ist (Code Page).
+
+```{r}
+novels_txt = readtext("data/books/*.txt", docvarsfrom = "filenames", encoding = "UTF-8") %>% 
+  rename(title = docvar1)
+novels_txt
+
+```
+
+
+# 2. Extract characters
+
+## List
+
+Der reguläre Ausdruck *[a-zA-Z]* extrahiert nur Buchstaben des englischen Alphabets, *[:alpha:]* extrahiert dagegen auch nicht-englische Buchstaben, z.B. deutsche oder slowenische Sonderzeichen. Zahlen und andere spezielle Zeichen (z.B. Interpunktion) werden auf diese Weise nicht extrahiert.
+
+Regex *{1}* (= default) extrahiert Einzelbuchstaben. Bei Verwendung von *{2}* werden jeweils zwei aufeinander folgende Buchstaben extrahiert.
+
+Die Funktion *tolower()* sorgt dafür, dass Großbuchstaben in Kleinbuchstaben umgewandelt werden. Falls zwischen großen und kleinen Buchstaben unterschieden werden soll, entfernen wir diese Funktion aus dem Programmkode.
+
+```{r}
+letters = tolower(novels_txt$text) %>% str_extract_all(pattern = "[:alpha:]{1}")
+letters[[1]][1:10]
+letters[[2]][1:9]
+
+```
+
+
+## Data frame
+
+Tabellen und Graphiken erstellen ist leichter, wenn wir die Texte in Datensätze umwandeln, und zwar mit der Funktion *as.data.frame()*.
+
+```{r}
+novels = as.data.frame(novels_txt)
+
+```
+
+
+Mit der Funktion *unnest_tokens()* können wir auch Buchstaben isolieren und anschließend auszählen.
+
+```{r}
+library(tidytext)
+
+novels_character <- novels %>%
+  unnest_tokens(character, text, token = "characters", to_lower = TRUE, drop = T)
+
+head(novels_character)
+
+```
+
+# 3. Count letters
+
+Mit *count()* können wir die Häufigkeit einer Variable (hier: der Buchstaben) auszählen.
+
+```{r}
+novels_character %>% 
+  count(character, sort = TRUE)
+
+```
+
+Der tidytext-Tokenizer hat nicht nur Buchstaben, sondern auch Zahlen extrahiert. Da wir nur an der Häufigkeit von Buchstaben interessiert sind, filtern wir die Zahlen und andere Zeichen heraus. Dazu verwenden wir die Funktionen *filter()* und zusätzlich *str_detect()*, da wir für diese Aufgabe einen regulären Ausdruck nutzen wollen.
+
+```{r}
+novels_character %>% 
+  filter(str_detect(character, "[:alpha:]")) %>% 
+  count(character, sort = T)
+```
+
+
+Ein paar Zeichen, die nicht zum deutschen Alphabet gehören und mit dem vorherigen Programm-Schritt nicht herausfiltern konnten, werden im nächsten Schritt ebenfalls herausgefiltert.
+
+Wir speichern das Ergebnis als neue Tabelle mit dem Namen "char_freq".
+
+```{r}
+char_freq <- novels_character %>% 
+  filter(str_detect(character, "[:alpha:]")) %>% 
+  filter(!str_detect(character, "é|á")) %>% 
+  count(character, sort = T)
+
+char_freq
+
+```
+
+Insgesamt haben wir 30 Buchstaben des deutschen Alphabets in den Romanen unterschieden.
+Aus wie vielen Buchstaben des deutschen Alphabets bestehen die Romane? Die Summe erhalten wir mit der Funktion *summarise()* - fast 700 Tausend.
+
+```{r}
+char_freq %>% 
+  summarise(total = sum(n))
+```
+
+Es ist nun wirklich Zeit, mal ein Bild zu malen! 
+Dazu verwenden wir das Programm *ggplot2*, das im Programmbündel *tidyverse* enthalten ist.
+
+Das Diagramm zeigt sehr deutlich, dass gewaltige Häufigkeitsunterschiede im deutschen Alphabet bestehen.
+
+```{r}
+char_freq %>% 
+  mutate(character = fct_reorder(character, n)) %>% # Sortieren nach Frequenz
+  ggplot(aes(n, character, fill = character)) +
+  geom_col() +
+  theme(legend.position = "none")
+
+```
+
+Eine bessere Vorstellung erhalten wir von den Zahlenverhältnissen, wenn wir die gewaltigen Zahlen in Prozente umwandeln.
+
+```{r}
+library(scales)
+char_freq %>% 
+  mutate(Prozent = n / sum(n)) %>% # Umwandlung in Prozente
+  ungroup() %>% 
+  mutate(character = fct_reorder(character, Prozent)) %>% # Sortieren nach Prozenten
+  ggplot(aes(Prozent, character, fill = character)) +
+  geom_col() +
+  theme(legend.position = "none") +
+  scale_x_continuous(labels = percent) # Prozent-Format
+
+```
+
+
+Betrachten wir zunächst nur die Vokale!
+Zu diesem Zweck bilden wir eine Vokalliste. Zwischen den Vokalen setzen wir das "oder"-Zeichen "|" ein.
+
+```{r}
+vokale = "a|e|i|o|u|ä|ö|ü|y"
+```
+
+Die Vokalliste "vokale" verwenden wir mit den Funktionen *filter()* und *str_detect()*.
+
+```{r}
+library(scales)
+char_freq %>% 
+  filter(str_detect(character, vokale)) %>% 
+  mutate(Prozent = n / sum(n)) %>% # Umwandlung in Prozente
+  ungroup() %>% 
+  mutate(character = fct_reorder(character, Prozent)) %>% # Sortieren nach Prozenten
+  ggplot(aes(Prozent, character, fill = character)) +
+  geom_col() +
+  theme(legend.position = "none") +
+  labs(y = "Vokale", x = "Häufigkeit in Romanen") +
+  scale_x_continuous(labels = percent, breaks = seq(0, 0.50, 0.05)) # Prozent-Format
+
+```
+
+Am häufigsten kommt der Buchstabe "e" in den Romanen vor (fast 45%-iger Anteil unter den Vokalen!), am seltensten "y", welches im Wesentlichen in Fremd- und Lehnwörtern auftritt.
+
+
+Welche Konsonanten kommen am häufigsten vor?
+Zum Filtern verwenden wir wiederum die Vokalliste, dieses Mal allerdings mit Negationszeichen "!".
+
+```{r}
+library(scales)
+char_freq %>% 
+  filter(!str_detect(character, vokale)) %>% # Negationszeichen, daher Konsonanten beibehalten
+  mutate(Prozent = n / sum(n)) %>% # Umwandlung in Prozente
+  ungroup() %>% 
+  mutate(character = fct_reorder(character, Prozent)) %>% # Sortieren nach Prozenten
+  ggplot(aes(Prozent, character, fill = character)) +
+  geom_col() +
+  theme(legend.position = "none") +
+  labs(y = "Konsonanten", x = "Häufigkeit in Romanen") +
+  scale_x_continuous(labels = percent, breaks = seq(0, 0.50, 0.02)) # Prozent-Format und Einheiten
+
+```
+
+Der Buchstabe "n" kommt in den Romanen am häufigsten vor, gefolgt von den Buchstaben: "r, s, t, h, d".
+Selten sind die Buchstaben: "x, q, p, ß, v".
+
+
+Welches Zahlenverhältnis besteht zwischen den Vokalen und Konsonanten?
+
+21 Konsonantische Buchstaben und 9 vokalische Buchstaben. Pro Silbe sind 1 Vokal und 2 (oder mehr) Konsonanten zu erwarten.
+
+```{r}
+char_freq %>% 
+  mutate(buchstabe = ifelse(str_detect(character, vokale), "Vokal", "Konsonant")) %>% 
+  count(buchstabe)
+
+```
+
+Der höhere Anteil der Konsonanten entspricht der größeren Konsonantenmenge.
+
+```{r}
+char_freq %>% 
+  mutate(buchstabe = ifelse(str_detect(character, vokale), "Vokal", "Konsonant")) %>% 
+  mutate(Prozent = n / sum(n)) %>% 
+  group_by(buchstabe) %>% 
+  summarise(Avg_Prozent = sum(Prozent))
+
+```
+
+
+```{r}
+char_freq %>% 
+  mutate(buchstabe = ifelse(str_detect(character, vokale), "Vokal", "Konsonant")) %>% 
+  mutate(Prozent = n / sum(n)) %>% 
+  group_by(buchstabe) %>% 
+  summarise(Avg_Prozent = sum(Prozent)) %>% 
+  ggplot(aes(Avg_Prozent, buchstabe, fill = buchstabe)) +
+  geom_col() +
+  theme(legend.position = "none") +
+  labs(y = "Vokale / Konsonanten", x = "Häufigkeit in Romanen") +
+  scale_x_continuous(labels = percent, breaks = seq(0, 0.75, 0.1)) # Prozent-Format und Einheiten
+
+```
+
+
+Wie viele Silben kommen in den Romanen schätzungsweise vor und wie viele Buchstaben pro Silbe?
+Die Anzahl der Silben schätzen wir mit einer Programmfunktion in *qdap*.
+
+```{r}
+novels_words <- novels %>%
+  unnest_tokens(word, text, token = "words", to_lower = TRUE, drop = T) %>% 
+  mutate(syllables = nsyllable::nsyllable(as.character(word), language = "en")) %>% 
+  mutate(letters = nchar(word))
+  
+head(novels_words)
+
+```
+Insgesamt fast 139 Tausend Silben in den Romanen.
+
+```{r}
+novels_words %>% 
+  count(syllables) %>% 
+  summarise(Silben = sum(n))
+
+```
+
+Die meisten Wörter haben eine Silbe (fast 60%) oder zwei Silben (fast 30%).
+
+```{r}
+novels_words %>% 
+  count(syllables) %>% 
+  mutate(Prozent = n / sum(n)) %>% 
+  ggplot(aes(syllables, Prozent, fill = factor(syllables))) +
+  geom_col() +
+  theme(legend.position = "none") +
+  scale_y_continuous(labels = percent, breaks = seq(0, 0.75, 0.1)) # Prozent-Format und Einheiten
+
+```
+
+Die durchschnittliche Anzahl der Silben pro Wort:
+
+```{r}
+novels_words %>% 
+  group_by(title) %>% 
+  distinct(word, .keep_all = T) %>%
+  add_count(word) %>% 
+  drop_na() %>% 
+  summarise(Avg_Silben = mean(syllables),
+            Stdev_Silben = sd(syllables),
+            Avg_Buchstaben = mean(letters),
+            Stdev_Buchstaben = sd(letters))
+
+```
+
+Der t-Test bestätigt, dass "Der Prozess" im Durchschnitt etwas längere Wörter aufweist (2,59 Silben pro Wort gegenüber 2,44 Silben pro Wort in "Tom Sawyer").
+
+```{r}
+x1 = novels_words %>% 
+  group_by(title) %>% 
+  distinct(word, .keep_all = T) %>%
+  add_count(word) %>% 
+  drop_na() %>% 
+  select(title, word, syllables) %>% 
+  pivot_wider(names_from = title, values_from = syllables)
+
+t.test(x1$prozess, x1$tom) # significant
+
+```
+
+Der zweite t-Test bestätigt ebenfalls, dass "Der Prozess" im Durchschnitt längere Wörter aufweist (8,79 Buchstaben pro Wort gegenüber 8.36 Buchstaben pro Wort in "Tom Sawyer".)
+
+```{r}
+x2 = novels_words %>% 
+  group_by(title) %>% 
+  distinct(word, .keep_all = T) %>%
+  add_count(word) %>% 
+  drop_na() %>% 
+  select(title, word, letters) %>% 
+  pivot_wider(names_from = title, values_from = letters)
+
+t.test(x2$prozess, x2$tom) # significant
+
+```
+
+
+```{r}
+novels_words_char <- novels %>%
+  unnest_tokens(word, text, token = "words", to_lower = TRUE, drop = T) %>% 
+  mutate(Silben = nsyllable::nsyllable(as.character(word), language = "en")) %>% 
+  unnest_tokens(character, word, token = "characters", to_lower = TRUE, drop = F) %>% 
+  mutate(buchstabe = ifelse(str_detect(character, vokale), "Vokal", "Konsonant"))
+  
+head(novels_words_char)
+
+```
+
