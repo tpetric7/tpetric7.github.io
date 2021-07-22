@@ -275,32 +275,29 @@ novels_words %>%
   group_by(title) %>% 
   distinct(word, .keep_all = T) %>%
   add_count(word) %>% 
-  drop_na() %>% 
-  summarise(Avg_Silben = mean(syllables),
-            Stdev_Silben = sd(syllables),
-            Avg_Buchstaben = mean(letters),
-            Stdev_Buchstaben = sd(letters))
+  summarise(Avg_Silben = mean(syllables, na.rm = TRUE),
+            Stdev_Silben = sd(syllables, na.rm = TRUE),
+            Avg_Buchstaben = mean(letters, na.rm = TRUE),
+            Stdev_Buchstaben = sd(letters, na.rm = TRUE))
 
 ```
 
-Die durchschnittliche Anzahl der Silben pro Wortform (tokens):
+Die durchschnittliche Anzahl der Silben pro Wortform (tokens), bei Berücksichtigung von Wortwiederholung:
 
 ```{r}
 novels_words %>% 
   group_by(title) %>% 
-  drop_na() %>% 
-  summarise(Avg_Silben = mean(syllables),
-            Stdev_Silben = sd(syllables),
-            Avg_Buchstaben = mean(letters),
-            Stdev_Buchstaben = sd(letters))
+  summarise(Avg_Silben = mean(syllables, na.rm = TRUE),
+            Stdev_Silben = sd(syllables, na.rm = TRUE),
+            Avg_Buchstaben = mean(letters, na.rm = TRUE),
+            Stdev_Buchstaben = sd(letters, na.rm = TRUE))
 
 ```
 
-
-Der t-Test bestätigt, dass "Der Prozess" im Durchschnitt etwas längere Wörter aufweist (2,59 Silben pro Wort gegenüber 2,44 Silben pro Wort in "Tom Sawyer").
+Der t-Test bestätigt, dass "Der Prozess" im Durchschnitt etwas längere Wörter aufweist (2,59 Silben pro Wort gegenüber 2,44 Silben pro Wort in "Tom Sawyer") - wenn Anzahl distinktiver Wortformen verwendet.
 
 ```{r}
-x1 = novels_words %>% 
+syls = novels_words %>% 
   group_by(title) %>% 
   distinct(word, .keep_all = T) %>%
   add_count(word) %>% 
@@ -308,24 +305,30 @@ x1 = novels_words %>%
   select(title, word, syllables) %>% 
   pivot_wider(names_from = title, values_from = syllables)
 
-t.test(x1$prozess, x1$tom) # significant
-
-x1 = novels_words %>% 
-  select(title, word, syllables) %>% 
-  drop_na() %>%
-  group_by(word) %>% 
-  pivot_wider(names_from = title, values_from = syllables) %>% 
-  unnest(cols = c(prozess, tom))
-
-
-t.test(x1$prozess, x1$tom) # significant
+t.test(syls$prozess, syls$tom) # significant
 
 ```
 
-Der zweite t-Test bestätigt ebenfalls, dass "Der Prozess" im Durchschnitt längere Wörter aufweist (8,79 Buchstaben pro Wort gegenüber 8.36 Buchstaben pro Wort in "Tom Sawyer".) Berücksichtigt wurd distinkte Wortformen (keine wiederholten Wortformen).
+Wenn die Wiederholung von Wortformen berücksichtigt wird, bestätigt der t-Test ebenfalls einen signifikanten Unterschied zwischen den beiden Texten. Die durchschnittliche Anzahl der Wortsilben ist niedriger, da kürzere Wortformen (solche von Konjunktionen, Präpositionen, Artikeln und anderen Funktionswörtern) häufig vorkommen.
 
 ```{r}
-x2 = novels_words %>% 
+prozess_syl <- novels_words %>% 
+  filter(title == "prozess") %>% 
+  select(syllables) %>% 
+  rename(prozess = syllables)
+tom_syl <- novels_words %>% 
+  filter(title == "tom") %>% 
+  select(syllables) %>% 
+  rename(prozess = syllables)
+  
+t.test(prozess_syl, tom_syl) # significant
+
+```
+
+Der nächste t-Test bestätigt ebenfalls, dass "Der Prozess" im Durchschnitt längere Wörter aufweist (8,79 Buchstaben pro Wort gegenüber 8.36 Buchstaben pro Wort in "Tom Sawyer".) Berücksichtigt wurden distinkte Wortformen (keine wiederholten Wortformen).
+
+```{r}
+lets = novels_words %>% 
   group_by(title) %>% 
   distinct(word, .keep_all = T) %>%
   add_count(word) %>% 
@@ -333,18 +336,27 @@ x2 = novels_words %>%
   select(title, word, letters) %>% 
   pivot_wider(names_from = title, values_from = letters)
 
-t.test(x2$prozess, x2$tom) # significant
-
-x2 = novels_words %>% 
-  select(title, word, letters) %>%
-  group_by(word) %>% 
-  pivot_wider(names_from = title, values_from = letters) %>% 
-  unnest(cols = c(prozess, tom))
-
-t.test(x2$prozess, x2$tom) # significant
+t.test(lets$prozess, lets$tom) # significant
 
 ```
 
+Wenn die Wiederholung von Wortformen berücksichtigt wird, bestätigt der t-Test wiederum einen signifikanten Unterschied zwischen den beiden Texten. Die durchschnittliche Anzahl der Buchstaben pro Wort ist niedriger, da kürzere Wortformen (solche von Konjunktionen, Präpositionen, Artikeln und anderen Funktionswörtern) häufig vorkommen.
+
+```{r}
+prozess_let <- novels_words %>% 
+  filter(title == "prozess") %>% 
+  select(letters) %>% 
+  rename(prozess = letters)
+tom_let <- novels_words %>% 
+  filter(title == "tom") %>% 
+  select(letters) %>% 
+  rename(prozess = letters)
+  
+t.test(prozess_let, tom_let) # significant
+
+```
+
+Eine alternative Berechnung der Anzahl der Buchstaben pro Wort mit *quanteda* (ohne t-Test). Die Durchschnittswerte unterscheiden sich in den verschiedenen Berechnungen, was mit der verschiedenen Art der Tokenisierung und der Aussonderung von nicht relevanten Tokens und leeren Datenzeilen (NA) zu tun hat. Die Durchschnittswerte, die uns quanteda liefert, sind etwas höher als die tidyverse-Werte. Aber auch hier ist der Mittelwert für den "Prozess" höher als für "Tom Sawyer".
 
 ```{r}
 library(quanteda)
@@ -355,7 +367,7 @@ stats
 
 stats %>% 
   group_by(document) %>% 
-  transmute(buchstaben = chars/tokens)
+  transmute(buchstaben = (chars-puncts)/tokens)
 
 ```
 
