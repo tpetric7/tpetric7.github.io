@@ -27,6 +27,7 @@
 ### Basic NLP tasks
 - [Quanteda & tidyverse](docs/Sawyer_Prozess.md)
 - [Using regular expressions](docs/Regex_in_quanteda.md)
+- [Letter frequency, word length, syllables](docs/Letter_frequency.md)
 - Sentiment Viewer [html](docs/sentiment_prozess_tom.html)
 
 ### Acoustic Phonetics
