@@ -268,7 +268,7 @@ novels_words %>%
 
 ```
 
-Die durchschnittliche Anzahl der Silben pro Wort:
+Die durchschnittliche Anzahl der Silben pro Wort (distinkte Wortformen !):
 
 ```{r}
 novels_words %>% 
@@ -283,6 +283,20 @@ novels_words %>%
 
 ```
 
+Die durchschnittliche Anzahl der Silben pro Wortform (tokens):
+
+```{r}
+novels_words %>% 
+  group_by(title) %>% 
+  drop_na() %>% 
+  summarise(Avg_Silben = mean(syllables),
+            Stdev_Silben = sd(syllables),
+            Avg_Buchstaben = mean(letters),
+            Stdev_Buchstaben = sd(letters))
+
+```
+
+
 Der t-Test bestätigt, dass "Der Prozess" im Durchschnitt etwas längere Wörter aufweist (2,59 Silben pro Wort gegenüber 2,44 Silben pro Wort in "Tom Sawyer").
 
 ```{r}
@@ -296,9 +310,19 @@ x1 = novels_words %>%
 
 t.test(x1$prozess, x1$tom) # significant
 
+x1 = novels_words %>% 
+  select(title, word, syllables) %>% 
+  drop_na() %>%
+  group_by(word) %>% 
+  pivot_wider(names_from = title, values_from = syllables) %>% 
+  unnest(cols = c(prozess, tom))
+
+
+t.test(x1$prozess, x1$tom) # significant
+
 ```
 
-Der zweite t-Test bestätigt ebenfalls, dass "Der Prozess" im Durchschnitt längere Wörter aufweist (8,79 Buchstaben pro Wort gegenüber 8.36 Buchstaben pro Wort in "Tom Sawyer".)
+Der zweite t-Test bestätigt ebenfalls, dass "Der Prozess" im Durchschnitt längere Wörter aufweist (8,79 Buchstaben pro Wort gegenüber 8.36 Buchstaben pro Wort in "Tom Sawyer".) Berücksichtigt wurd distinkte Wortformen (keine wiederholten Wortformen).
 
 ```{r}
 x2 = novels_words %>% 
@@ -310,6 +334,28 @@ x2 = novels_words %>%
   pivot_wider(names_from = title, values_from = letters)
 
 t.test(x2$prozess, x2$tom) # significant
+
+x2 = novels_words %>% 
+  select(title, word, letters) %>%
+  group_by(word) %>% 
+  pivot_wider(names_from = title, values_from = letters) %>% 
+  unnest(cols = c(prozess, tom))
+
+t.test(x2$prozess, x2$tom) # significant
+
+```
+
+
+```{r}
+library(quanteda)
+library(quanteda.textstats)
+corp <- corpus(novels_txt)
+stats <- textstat_summary(corp)
+stats
+
+stats %>% 
+  group_by(document) %>% 
+  transmute(buchstaben = chars/tokens)
 
 ```
 
