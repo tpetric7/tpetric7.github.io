@@ -160,6 +160,13 @@ writexl::write_xlsx(novels_full_words, "data/novels_full_words.xlsx")
 
 # 4. Wortbildungsanalyse
 
+Um am nächsten Tag nicht alle vorherigen Schritte noch einmal machen zu müssen, können wir an dieser Stelle die zuvor gespeicherte Tabelle öffnen.
+
+```{r}
+novels_full_words = readxl::read_xlsx("data/novels_full_words.xlsx")
+```
+
+
 Wir beginnen unsere Wortbildungsanalyse mit dem Abzählen von verschiedenen Endungen, die von unserem Programm identifiziert wurden.
 
 Wir wählen mit *select()* nur ein paar Tabellenspalten aus, damit wir die Übersicht behalten.
@@ -223,9 +230,10 @@ Vergleichen wir mal die Häufigkeit der Endung "-lich" in den Romanen! Da dieses
 (lich_tab = novels_full_words %>% 
   group_by(doc_id) %>% 
   filter(upos == "ADJ") %>% 
-  count(diffs == "lich") %>% 
-    pivot_wider(names_from = doc_id, values_from = n) %>% 
-  rename(lich = `diffs == "lich"`)
+  count(diffs == "lich") %>%
+  rename(lich = `diffs == "lich"`) %>% 
+  filter(!is.na(lich)) %>% 
+  pivot_wider(names_from = doc_id, values_from = n)
 )
 
 ```
@@ -244,8 +252,9 @@ Der Chi-Quadrat-Test hat lediglich einen signifikanten Unterschied zwischen den 
   group_by(doc_id) %>% 
   filter(upos == "ADJ") %>% 
   count(diffs == "lich") %>% 
-  pivot_wider(names_from = doc_id, values_from = n) %>% 
   rename(lich = `diffs == "lich"`) %>% 
+  filter(!is.na(lich)) %>% 
+  pivot_wider(names_from = doc_id, values_from = n) %>% 
   mutate(prozess_total = sum(prozess, na.rm = TRUE),
          tom_total = sum(tom, na.rm = TRUE)) %>% 
   mutate(prozess_pct = prozess/prozess_total,
@@ -255,7 +264,7 @@ Der Chi-Quadrat-Test hat lediglich einen signifikanten Unterschied zwischen den 
 
 ```
 
-Fast 7,5% der als Adjektiv identifizierten Lemmas im Roman "prozess" enden mit dem Suffix "-lich", im Roman "tom" sind es weniger als 4%. Der Unterschied ist auch in der graphischen Darstellung zu sehen.
+Etwa 21,5% der als Adjektiv identifizierten Lemmas im Roman "prozess" enden mit dem Suffix "-lich", im Roman "tom sawyer" sind es etwa 15,2%. Der Unterschied ist auch in der graphischen Darstellung zu sehen.
 
 ```{r}
 lichtab2 %>% 
@@ -265,8 +274,60 @@ lichtab2 %>%
 
 ```
 
-Das Suffix "-lich" gehört zu den produktiven Wortbildungsmitteln im Deutschen. Warum sind im "prozess" mehr davon zu finden als im anderen Roman? Um diese Frage (zumindest ansatzweise) klären zu können, schauen wir eine Liste der Adjektive in den Romanen an.
+Das Suffix "-lich" gehört zu den produktiven Wortbildungsmitteln im Deutschen. Warum sind im "prozess" mehr davon zu finden als im anderen Roman? Zur Klärung dieser Frage müssten wir zuerst mehr über die semantischen Eigenschaften und Verknüpfungsmöglichkeiten (oder -einschränkungen) mit verschiedenen Wortstämmen erfahren.
 
+```{r}
+novels_full_words %>% 
+  select(doc_id, lemma, word, upos, diffs) %>%
+  group_by(doc_id, lemma, word) %>% 
+  filter(upos == "ADJ") %>% 
+  filter(diffs == "lich")
+
+```
+
+
+Vergleichen wir die Häufigkeit von mehreren adjektivischen Suffixen in unserem Romankorpus!
+
+```{r}
+novels_full_words %>% 
+  select(doc_id, lemma, word, upos, diffs) %>% # Auswahl von hier relevanten Spalten
+  group_by(doc_id, lemma, word) %>% # Gruppierung nach diesen Merkmalen (Spalten)
+  filter(upos == "ADJ") %>% # Auswahl der Wortklasse
+  filter(diffs == "lich" | diffs == "erlich" | diffs == "isch" | diffs == "ig") # Suffixauswahl
+
+```
+
+Von den insgesamt 1370 als (suffigiertes) Adjektiv identifizierten Wortformen (tokens) kommen 847 im "prozess" und 523 in "tom sawyer" vor. Der Anteil der Zustandsbeschreibungen mit Hilfe von suffigierten Adjektiven scheint im ersten Werk größer zu sein als im zuletzt genannten (was wir aber an dieser Stelle nicht mit einem Chi-Quadrat-Test überprüfen wollen).
+
+```{r}
+(adj_tab = novels_full_words %>% 
+  select(doc_id, lemma, upos, diffs) %>%
+  group_by(doc_id) %>% 
+  filter(upos == "ADJ") %>% 
+  filter(diffs == "lich" | diffs == "erlich" | diffs == "isch" | diffs == "ig") %>% 
+  count(diffs) %>% 
+  pivot_wider(names_from = doc_id, values_from = n) %>% 
+  mutate(prozess_total = sum(prozess, na.rm = TRUE),
+         tom_total = sum(tom, na.rm = TRUE)) %>% 
+  mutate(prozess_pct = prozess/prozess_total,
+         tom_pct = tom/tom_total)
+)
+
+```
+
+
+```{r}
+library(scales)
+
+adj_tab %>% 
+  pivot_longer(prozess_pct:tom_pct, names_to = "title", values_to = "pct") %>% 
+  mutate(diffs = fct_reorder(diffs, pct)) %>% 
+  ggplot(aes(pct, diffs, fill = title)) +
+  geom_col(position = "dodge") +
+  scale_x_continuous(labels = percent) +
+  theme(legend.position = "top")
+
+```
 
 
 # Nicht verwendete Tabelle
