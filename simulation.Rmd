@@ -1,0 +1,89 @@
+---
+title: "Simulation"
+author: "Teodor Petrič"
+date: "26 7 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 0. Packages
+
+```{r}
+library(tidyverse)
+library(scales)
+library(effects)
+
+```
+
+# 1. Simulation 1
+
+```{r}
+set.seed(2021)
+u = rbinom(n = 1000, size = 1, prob = 0.5)
+x = u + runif (n = 1000, min = 0, max = 2)
+y = -0.25*x + u + rnorm(n = 1000, sd = 0.75)
+
+```
+
+Model 1
+
+```{r}
+m = lm(y ~ x)
+m1 = m
+summary(m)
+
+```
+
+```{r}
+plot(m)
+```
+
+
+```{r}
+plot(allEffects(m))
+
+```
+
+Model 2: with control variable U
+
+```{r}
+m = lm(y ~ x + u)
+m2 = m
+summary(m)
+
+```
+
+```{r}
+plot(m)
+```
+
+
+```{r}
+plot(allEffects(m))
+```
+
+
+# 2. Simulation 2
+
+D = violence
+M = mediating variable (gender, village, ...)
+Y = attitude (causally affected by D ?)
+
+D --> M --> Y
+
+If we add M (ie. control for / condition M), the correlation between D and Y is blocked.
+
+```{r}
+set.seed(2983)
+D <- rnorm(1000)
+U <- rnorm(1000)
+M <- 0.6*D + 0.6*U + rnorm(1000)
+Y <- 0.6*U + rnorm(1000)
+lm(Y ~ D)
+lm(Y ~ D + M)
+
+```
+
