@@ -25,8 +25,10 @@
 - [xlookup](docs/Excel_vs_R.md)
 
 ### Basic NLP tasks
-- [Quanteda & tidyverse](docs/Sawyer_Prozess.md)
+- [Word and character count, Sentence length](docs/Textzerlegung.md)
+- [Novel comparison](docs/Sawyer_Prozess.md)
 - [Using regular expressions](docs/Regex_in_quanteda.md)
+- [Wordformation suffixes](docs/Romane_Suffixe.md)
 - [Letter frequency, word length, syllables](docs/Letter_frequency.md)
 - Sentiment Viewer [html](docs/sentiment_prozess_tom.html)
 
