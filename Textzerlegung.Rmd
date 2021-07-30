@@ -583,30 +583,30 @@ corp_dfm <- dfm(tok, verbose = FALSE)
 
 
 ```{r}
-ap_td <- tidy(corp_dfm) %>%
+term_count <- tidy(corp_dfm) %>%
   group_by(document) %>%
   arrange(desc(count)) # sortieren !!!
 
-ap_td
+term_count
 
 ```
 
 
 ```{r}
-ap_td <- tidy(corp_dfm) %>%
+term_count_rank <- tidy(corp_dfm) %>%
   group_by(document) %>%
   arrange(desc(count)) %>%
   mutate(rank = row_number(),
          total = sum(count),
          `term frequency` = count / total)
 
-ap_td
+term_count_rank
 
 ```
 
 
 ```{r}
-ap_td %>%
+term_count_rank %>%
   ggplot(aes(rank, `term frequency`, color = document)) +
   geom_line(alpha = 0.8, show.legend = FALSE) + 
   scale_x_log10() +
@@ -616,7 +616,7 @@ ap_td %>%
 
 ```{r}
 alpha = 1
-ap_td %>%
+term_count_rank %>%
     mutate(rank = as.integer(rank(length(term) - `term frequency` + 1, ties.method = "average")), 
            zipfs_freq = ifelse(rank == 1, `term frequency`, 
                                dplyr::first(`term frequency`) / rank^alpha)) %>% 
