@@ -146,6 +146,37 @@ char_freq %>%
 
 ```
 
+Getrennte tabellarische Darstellung für die Texte:
+
+```{r}
+novels_character %>% 
+  group_by(doc_id) %>% 
+  count(character, sort = TRUE) %>% 
+  pivot_wider(names_from = doc_id, values_from = n)
+
+```
+
+Getrennte graphische Darstellung für die Texte:
+
+
+```{r}
+library(scales)
+novels_character %>% 
+  group_by(doc_id) %>% 
+  count(character, sort = TRUE) %>% 
+  mutate(Prozent = n / sum(n)) %>% # Umwandlung in Prozente
+  ungroup() %>% 
+  mutate(character = fct_reorder(character, Prozent)) %>% # Sortieren nach Prozenten
+  filter(Prozent > 0.0001) %>% 
+  ggplot(aes(Prozent, character, fill = character)) +
+  geom_col() +
+  theme(legend.position = "none") +
+  facet_wrap(~ doc_id, scales = "free")
+  scale_x_continuous(labels = percent) # Prozent-Format
+
+```
+
+
 # 4. Vokale
 
 Betrachten wir zunächst nur die Buchstaben, die Vokale symbolisieren!
@@ -503,8 +534,8 @@ Die Durchschnittswerte, die uns quanteda liefert, sind etwas höher als die tidy
 ```{r}
 library(quanteda)
 library(quanteda.textstats)
-corp <- corpus(novels_txt)
-stats <- textstat_summary(corp)
+corp = corpus(novels_txt)
+stats = textstat_summary(corp)
 stats
 
 stats %>% 
@@ -516,7 +547,36 @@ stats %>%
 Die Durchschnittswerte unterscheiden sich in den Berechnungen (tidyverse vs. quanteda), was mit der verschiedenen Art der Tokenisierung und der Aussonderung von nicht relevanten Tokens und leeren Datenzeilen (NA) zu tun hat. 
 
 
-# 11. Datensatz-Variante
+# 11. Konsonantenverbindungen
+
+Welche Konsonantenverbindungen (Buchstabenverbindungen) kommen häufiger vor in den Texten?
+Wir zerlegen die Texte im Korpus in kleinere Einheiten (mittels *tokens*()), aber dieses Mal in alphanumerische Zeichen (Buchstaben). 
+Anschließend wenden wir *char_ngrams()*-Funktion an, mit der man Verknüpfungen von Zeichen feststellen kann.
+
+```{r}
+tok_ch = tokens(corp, what = "character", remove_punct = TRUE, remove_symbols = T, remove_numbers = T, remove_url = T, remove_separators = T)
+
+ngrams_ch = char_ngrams(as.character(tok_ch), n = c(2,3,4), concatenator = "")
+
+```
+
+Wir wandeln die ngram-Liste in einen Datensatz um (mittels *tibble()*), was das Zählen mit einer *tidyverse*-Funktion ermöglicht.
+
+```{r}
+ngrams_char = ngrams_ch %>% 
+  as_tibble() %>% 
+  rename(cluster = value)
+
+ngrams_char %>% 
+  count(cluster, sort = TRUE)
+
+```
+
+
+to be continued ...
+
+
+# 12. Datensatz-Variante
 
 
 ```{r}
