@@ -1,0 +1,55 @@
+---
+title: "R and Py"
+author: "Teodor Petrič"
+date: "30 7 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 0. Packages
+
+```{r}
+library(tidyverse)
+library(tidytext)
+
+```
+
+# 1. Text öffnen
+
+In der R-Umgebung haben wir mehrere Möglichkeiten, Textdateien zu öffnen. Hier verwenden wir *read_lines()*, ein Programm, das mit dem Programmbündel *tidyverse* geladen wird.
+
+Bei langen Texten vermeiden wir es, den ganzen Text in den Arbeitsspeicher (RAM) zu laden, weil das lange dauern kann. Stattdessen verwenden wir Befehle wie *substr()* oder die tidyverse-Funktion *str_sub()*, um uns einen Teil des Texte anzuschauen.
+
+```{r}
+novels_r = read_lines("data/books/tom.txt")
+
+substr(novels_r, start = 1, stop = 300)
+str_sub(novels_r, start = 1, end = 300)
+
+```
+
+Mit Hilfe des Programms *reticulate* können wir den Text aus der R-Umgebung in die Python-Umgebung abbilden (kopieren, engl. map), und zwar indem wir das Präfix "r." verwenden und dann den Namen der Textvariablen anhängen.
+
+```{r}
+# install.packages("reticulate")
+# install.packages("spacyr")
+library(reticulate)
+use_condaenv("spacy_condaenv")
+
+```
+
+```{python}
+novels_py = r.novels_r
+
+```
+
+In Python können wir eine Textdatei z.B. folgendermaßen öffnen und uns einen Teil des Textes ansehen:
+
+```{python}
+f = open("data/books/tom.txt", encoding="utf8")
+print(f.read(300))
+
+```

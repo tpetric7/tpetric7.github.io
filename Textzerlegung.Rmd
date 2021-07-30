@@ -31,28 +31,6 @@ str_sub(novels_r, start = 1, end = 300)
 
 ```
 
-Mit Hilfe des Programms *reticulate* können wir den Text aus der R-Umgebung in die Python-Umgebung abbilden (kopieren, engl. map), und zwar indem wir das Präfix "r." verwenden und dann den Namen der Textvariablen anhängen.
-
-```{r}
-# install.packages("reticulate")
-# install.packages("spacyr")
-library(reticulate)
-use_condaenv("spacy_condaenv")
-
-```
-
-```{python}
-novels_py = r.novels_r
-
-```
-
-In Python können wir eine Textdatei z.B. folgendermaßen öffnen und uns einen Teil des Textes ansehen:
-
-```{python}
-f = open("data/books/tom.txt", encoding="utf8")
-print(f.read(300))
-
-```
 
 # 2. Zerlegung des Textes
 
@@ -256,11 +234,75 @@ Wie viele alphanumerische Zeichen (Buchstaben und Ziffern) kommen durchschnittli
 Beinahe 72 Zeichen. Die Standardabweichung von diesem Mittelwert ist ziemlich groß: 71,5 +/- 61,9 Zeichen. In diesem Text kommen sehr kurze Äußerungen vor, aber auch deutlich längere.
 
 ```{r}
-novels_ch %>% 
+(char_summary = novels_ch %>% 
   count(sentence) %>% 
   summarise(char_sum = sum(n),
             char_avg = mean(n, na.rm = TRUE),
             char_sd = sd(n, na.rm = TRUE))
+)
+
+```
+
+Kurze Äußerungen (hier: mit wenigen Buchstaben) kommen sehr häufig vor, sehr lange (hier: mit vielen Buchstaben) dagegen selten. 
+
+```{r}
+novels_ch %>% 
+  count(sentence) %>% 
+  ggplot(aes(n)) +
+  geom_density(fill = "magenta", alpha = 0.7) +
+  labs(x = "Anzahl der Buchstaben", y = "Dichte")
+
+```
+
+Folgt die Äußerungslänge (in Buchstaben gemessen) einer Zipf-Verteilung?
+
+```{r}
+alpha = 1
+novels_ch %>% 
+  count(sentence, sort = TRUE) %>% # Sortieren nicht vergessen!
+  mutate(rank = row_number(),
+         zipfs_freq = ifelse(rank == 1, n, dplyr::first(n) / rank^alpha)) %>% 
+  ggplot(aes(rank, n)) +
+  geom_point() +
+  labs(y = "Anzahl der Buchstaben", x = "Rangfolge")
+
+```
+
+Im Vergleich dazu unten: so sähe die entsprechende Zipf-Verteilung (Power-Law-Distribution) aus, die für ausreichend lange Texte gültig ist. 
+
+In einer Zipfverteilung käme die zweithäufigste Äußerungslänge etwa nur noch halb so häufig vor wie die häufigste Äußerungslänge, die dritthäufigste nur noch ein Drittel der ersthäufigsten, die vierthäufigste nur noch ein Viertel der ersthäufigsten usw.
+
+```{r}
+alpha = 1
+novels_ch %>% 
+  count(sentence, sort = TRUE) %>% # Sortieren nicht vergessen!
+  # mutate(rank = row_number(),
+  mutate(rank = rank(row_number(), ties.method = "average"),
+         zipfs_freq = ifelse(rank == 1, n, dplyr::first(n) / rank^alpha)) %>% 
+  ggplot(aes(rank, zipfs_freq)) +
+  geom_point() +
+  labs(y = "Anzahl der Buchstaben", x = "Rangfolge")
+
+```
+
+Wenn man die beiden Variablen (Rang und Häufigkeit) in einer Zipfverteilung logarithmiert, ist das Ergebnis eine Gerade. Die Äußerungslänge (hier: Buchstabenanzahl) im Roman "Tom Sawyer" scheint davon abzuweichen. Die mittellangen Äußerungen kommen häufiger vor, als nach der Zipfverteilung erwartet wird.
+
+```{r}
+library(scales)
+
+alpha = 1
+novels_ch %>% 
+  count(sentence, sort = TRUE) %>% # sortieren !
+  mutate(rank = rank(row_number(), ties.method = "first"),
+         zipfs_freq = ifelse(rank == 1, 
+                             n, 
+                             dplyr::first(n) / rank^alpha)) %>% 
+  ggplot(aes((n), (rank), color = "Roman")) +
+  geom_point() +
+  geom_point(aes(((zipfs_freq)), ((rank)), color = "theoretisch")) +
+  labs(x = "Anzahl der Buchstaben", y = "Rangfolge", color = "Verteilung") +
+  scale_x_log10() +
+  scale_y_log10()
 
 ```
 
@@ -268,9 +310,40 @@ Welche Buchstaben kommen im Text häufiger / seltener vor?
 Unter den auf Vokale bezogenen Buchstaben ist das "e" am häufigsten, unter den auf Konsonanten bezogenen das "n".
 
 ```{r}
+alpha = 1
 novels_ch %>% 
   filter(str_detect(char, "[:alpha:]")) %>% 
   count(char, sort = T)
+
+```
+
+
+```{r}
+novels_ch %>% 
+  filter(str_detect(char, "[:alpha:]")) %>% 
+  count(char, sort = T) %>% 
+  mutate(char = fct_reorder(char, n)) %>% 
+  ggplot(aes(n, char, fill = char)) +
+  geom_col() +
+  theme(legend.position = "none")
+
+```
+
+
+```{r}
+novels_ch %>% 
+  filter(str_detect(char, "[:alpha:]")) %>% 
+  count(char, sort = T) %>% # sortieren !
+  mutate(rank = rank(row_number(), ties.method = "first"),
+         zipfs_freq = ifelse(rank == 1, 
+                             n, 
+                             dplyr::first(n) / rank^alpha)) %>% 
+  ggplot(aes((n), (rank), color = "Roman")) +
+  geom_point() +
+  geom_point(aes(((zipfs_freq)), ((rank)), color = "theoretisch")) +
+  labs(x = "Anzahl der Buchstaben", y = "Rangfolge", color = "Verteilung") +
+  scale_x_log10() +
+  scale_y_log10()
 
 ```
 
@@ -292,6 +365,47 @@ novels_ch %>%
   count(word, sort = TRUE)
 ```
 
+Folgen die Worthäufigkeiten einer Zipfverteilung (Power-Law-Distribution)?
+In der folgenden Tabelle sind folgende Größen zu sehen:
+- die Gebrauchshäufigkeit oder Tokenfrequenz eines Wortes im Text (n)
+- die Rangfolge des Wortes (rank),
+- die berechnete Konstante (k = frequenz * rang),
+- die berechnete theoretische Tokenfrequenz eines Wortes (zips_freq).
+
+```{r}
+novels_ch %>% 
+  distinct(word_id, .keep_all = TRUE) %>% 
+  count(word, sort = TRUE) %>% # sortieren !!!
+  mutate(rank = rank(row_number(), ties.method = "average"),
+         k = n * rank,
+         zipfs_freq = ifelse(rank == 1, 
+                             n, 
+                             dplyr::first(n) / rank^alpha),
+         zipfs_freq_k = ifelse(rank == 1, 
+                             k, 
+                             dplyr::first(k) / rank^alpha))
+
+```
+
+Die häufigeren Wörter scheinen in "Tom Sawyer" häufiger vorzukommen als nach der Zipfverteilung erwartet wird. Das spricht für einen simpleren Wortschatz, einen eher umgangssprachlich formulierten Text.
+
+```{r}
+novels_ch %>% 
+  distinct(word_id, .keep_all = TRUE) %>% 
+  count(word, sort = TRUE) %>% # sortieren !!!
+  mutate(rank = rank(row_number(), ties.method = "average"),
+         zipfs_freq = ifelse(rank == 1, 
+                             n, 
+                             dplyr::first(n) / rank^alpha)) %>% 
+  ggplot(aes((n), (rank), color = "Roman")) +
+  geom_point() +
+  geom_point(aes(((zipfs_freq)), ((rank)), color = "theoretisch")) +
+  labs(x = "Worthäufigkeit", y = "Rangfolge", color = "Verteilung") +
+  scale_x_log10() +
+  scale_y_log10()
+
+```
+
 
 ## Wortschatzdichte
 
@@ -307,6 +421,9 @@ novels_ch %>%
 
 ```
 
+Auch die lexikalische Diversität (Wortschatzdichte) ist relativ gering, da die Anzahl der verschiedenen Wortformen (types) im Vergleich zu ihrer Gebrauchsfrequenz (tokens) verhältnismäßig klein ist. Dies spricht wiederum für die These, dass der Roman einen recht einfachen Wortschatz aufweist, was einem eher umgangssprachlichen Stil entspricht.
+
+
 ## Äußerungslänge
 
 Wie viele Wörter kommen durchschnittlich in einer Äußerung vor?
@@ -320,6 +437,80 @@ novels_ch %>%
             sd_sents = sd(n))
   
 ```
+
+Die Häufigkeitsverteilung der Äußerungslänge im Roman:
+
+```{r}
+novels_ch %>% 
+  distinct(word_id, .keep_all = TRUE) %>% 
+  count(sentence, sort = TRUE) %>% # sortieren !!!
+  mutate(rank = as.integer(length(sentence) - rank(n, ties.method = "average") + 1),
+         rank2 = rank(row_number(), ties.method = "average"),
+         zipfs_freq = ifelse(rank == 1, 
+                             n, 
+                             dplyr::first(n) / rank^alpha)) %>% 
+  ggplot(aes(n)) +
+  geom_histogram(fill = "darkgreen", alpha = 0.7, binwidth = 2) +
+  labs(x = "Anzahl der Wörter", y = "Anzahl der Äußerungen")
+
+```
+
+Logarithmiert:
+
+```{r}
+novels_ch %>% 
+  distinct(word_id, .keep_all = TRUE) %>% 
+  count(sentence, sort = TRUE) %>% # sortieren !!!
+  mutate(rank = as.integer(length(sentence) - rank(n, ties.method = "average") + 1),
+         rank2 = rank(row_number(), ties.method = "average"),
+         zipfs_freq = ifelse(rank == 1, 
+                             n, 
+                             dplyr::first(n) / rank^alpha)) %>% 
+  ggplot(aes(n)) +
+  geom_histogram(fill = "darkgreen", alpha = 0.7, binwidth = 0.05) +
+  scale_x_log10() +
+  labs(x = "Anzahl der Wörter", y = "Anzahl der Äußerungen")
+
+
+```
+
+
+Tabelle mit Anzahl der Wörter pro Äußerung (n), Rangfolge (rank) und die theoretische Frequenz gemäß Zipfverteilung (zipfs_freq). 
+
+```{r}
+novels_ch %>% 
+  distinct(word_id, .keep_all = TRUE) %>% 
+  count(sentence, sort = TRUE) %>% # sortieren !!!
+  mutate(rank = as.integer(length(sentence) - rank(n, ties.method = "average") + 1),
+         rank2 = rank(row_number(), ties.method = "average"),
+         zipfs_freq = ifelse(rank == 1, 
+                             n, 
+                             dplyr::first(n) / rank^alpha)) %>% 
+  arrange(rank)
+
+```
+
+Die Verteilung der Äußerungslängen unterscheidet sich von der Zipfverteilung.
+
+```{r}
+alpha = 1
+novels_ch %>% 
+  distinct(word_id, .keep_all = TRUE) %>% 
+  count(sentence, sort = F) %>% # sortieren !!!
+  mutate(rank = as.integer(length(sentence) - rank(n, ties.method = "average") + 1),
+         zipfs_freq = ifelse(rank == 1, 
+                             n, 
+                             dplyr::first(n) / rank^alpha)) %>% 
+  ggplot(aes((n), (rank), color = "Roman")) +
+  geom_point() +
+  geom_point(aes(((zipfs_freq)), ((rank)), color = "theoretisch")) +
+  geom_jitter() +
+  labs(x = "WAnzahl der Wörter", y = "Rangfolge", color = "Verteilung") +
+  scale_x_log10() +
+  scale_y_log10()
+
+```
+
 
 ## Vergleich mit quanteda
 
@@ -335,6 +526,11 @@ Die Zahlenwerte, die wir mit dem Program *quanteda* (ohne genauere Bearbeitung) 
 # ohne Filterung
 corp = corpus(novels_r)
 textstat_summary(corp)
+
+```
+Gefiltert sind die Werte mit den Werten vergleichbar, die wir mit den tidyverse-Funktionen berechnet haben.
+
+```{r}
 
 # gefiltert
 tok = tokens(corp, remove_punct = T, remove_symbols = T, remove_numbers = T, remove_url = T, remove_separators = T)
@@ -355,7 +551,7 @@ textstat_summary(toks)
 
 ```
 
-Die von quanteda berechnete durchschnittliche Äußerungslänge und ihre Standardabweichung weisen ähnliche Werte auf wie die zuvor berechneten mit den tidyverse-Funktionen.
+Die von quanteda berechnete durchschnittliche Äußerungslänge und ihre Standardabweichung weisen ähnliche Werte auf (Mittelwert = 14,41, Standardabweichung = 11,998) wie die zuvor berechneten mit den tidyverse-Funktionen.
 
 ```{r}
 textstat_summary(toks) %>% 
@@ -365,7 +561,7 @@ textstat_summary(toks) %>%
 ```
 
 
-Lexikalische Diversität (Wortschatzdichte) des gesamten Texts (ähnlich wie mit den tidyverse-Funktionen).
+Lexikalische Diversität (Wortschatzdichte) des gesamten Texts liegt bei 0,1467 (ähnlich wie mit den tidyverse-Funktionen).
 
 ```{r}
 textstat_lexdiv(tok)
@@ -378,6 +574,62 @@ Wortschatzdichte in einzelnen Äußerungen:
 textstat_lexdiv(toks)
 
 ```
+
+
+```{r}
+corp_dfm <- dfm(tok, verbose = FALSE)
+
+```
+
+
+```{r}
+ap_td <- tidy(corp_dfm) %>%
+  group_by(document) %>%
+  arrange(desc(count)) # sortieren !!!
+
+ap_td
+
+```
+
+
+```{r}
+ap_td <- tidy(corp_dfm) %>%
+  group_by(document) %>%
+  arrange(desc(count)) %>%
+  mutate(rank = row_number(),
+         total = sum(count),
+         `term frequency` = count / total)
+
+ap_td
+
+```
+
+
+```{r}
+ap_td %>%
+  ggplot(aes(rank, `term frequency`, color = document)) +
+  geom_line(alpha = 0.8, show.legend = FALSE) + 
+  scale_x_log10() +
+  scale_y_log10()
+
+```
+
+```{r}
+alpha = 1
+ap_td %>%
+    mutate(rank = as.integer(rank(length(term) - `term frequency` + 1, ties.method = "average")), 
+           zipfs_freq = ifelse(rank == 1, `term frequency`, 
+                               dplyr::first(`term frequency`) / rank^alpha)) %>% 
+  ggplot(aes(rank, `term frequency`, color = document)) +
+  geom_line(alpha = 0.8, show.legend = FALSE) + 
+  geom_point(aes((rank), (zipfs_freq), color = "theoretisch")) +
+  geom_jitter() +
+  labs(y = "Termfrequenz", x = "Rangfolge", color = "Verteilung") +
+  scale_x_log10() +
+  scale_y_log10()
+
+```
+
 
 
 ## Vergleich mit Voyant Tools
