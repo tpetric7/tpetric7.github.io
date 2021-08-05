@@ -910,7 +910,8 @@ tail(tom_df)
 Shranjujemo in nadaljujemo naslednjič.
 
 ```{r}
-write_rds(tom_df, "data/tom_df.rds")
+# write_rds(tom_df, "data/tom_df.rds")
+# tom_df = read_rds("data/tom_df.rds")
 ```
 
 
@@ -920,12 +921,12 @@ Zdaj lahko začnemo poizvedovati po besednih oblikah, slovarskih enotah in
 slovničnih kategorijah.
 
 ```{r}
-(tabela = x %>% 
+tabela = tom_df %>% 
   group_by(doc_id) %>% 
   count(upos) %>% 
   filter(!is.na(upos),
          upos != "PUNCT")
-)
+head(tabela)
 
 tabela %>% 
   mutate(upos = reorder_within(upos, n, n, sep = ": ")) %>% 
@@ -937,13 +938,13 @@ tabela %>%
 
 ```
 
-Izračun deležev v odstotkih:
+Izračun deležev:
 
 ```{r}
-(delezi = tabela %>% 
+delezi = tabela %>% 
   mutate(prozent = n/sum(n)) %>% 
   pivot_wider(id_cols = upos, names_from = doc_id, values_from = n:prozent)
-)
+head(delezi)
 
 ```
 
@@ -953,33 +954,32 @@ delezi %>%
 
 ```
 
-Ali se besedili razlikujeta glede na razmerje med samostalniki in zaimki?
+Ali se besedili razlikujeta glede razmerja med samostalniki in zaimki?
+Glede na to, da gre za vsebinsko in najbrž tudi slogovno zelo podobni besedili (izvirnik in prevod), in glede na to, da gre za sorodna jezika (angleščinao in nemščino), bi bila verjetna ničelna domneva (H0: med izvirnikom in prevodom ni statistično značilne razlike). Manj verjetna se zdi alternativna hipoteza (H1: med izvirnikom in prevodom je statistično značilna razlika). 
 
 ```{r}
 # za hi kvadrat test potrebujemo le drugi in tretji stolpec
 nominal = delezi %>% 
   filter(upos %in% c("NOUN", "PRON")) %>% 
-  select(n_doc1, n_doc2) 
+  select(n_tom_de, n_tom_en) 
 
+# statisticni preskus
 chisq.test(nominal)
 
 ```
 
-Besedili se razlikujeta glede razmerja med samostalniki in zaimki: X\^2 (1) =
-147,38; p \< 0,001. Iz gornje tabele pogostnosti je razvidno, da je delež
-zaimkov v romanu "Prozess" sorazmerno večji kot v romanu "Tom Sawyer". Da bi
-ugotovili, kaj to pomeni, bi si morali podrobneje ogledati, kateri zaimki in
-kateri samostalniki bistveno vplivajo na to številčno razmerje. Na splošno
-velja, da so zaimki manj zanesljiva jezikovna sredstva kot samostalniki,
-samostalniki pa so bolj zapleteni.
+Hi kvadrat test potrjuje alternativno domnevo (H1). Angleški izvirnik in nemški prevod se razlikujeta glede razmerja med samostalniki in zaimki: X\^2 (1) = 5,71; p \< 0,001. Iz gornje tabele pogostnosti je razvidno, da je delež samostalnikov v angleškem izvirniku nekoliko večji kot v nemškem prevodu. Razlika je sicer zaradi velikih vzorcev statistično značilna, ni pa velika, saj so deleži zelo podobni. 
+
+Da bi ugotovili, ali je ugotovljena statistična značilna razlika pomembna, bi si morali podrobneje ogledati, kateri zaimki in kateri samostalniki bistveno vplivajo na to številčno razmerje. Na splošno velja, da so zaimki manj zanesljiva jezikovna sredstva kot samostalniki, samostalniki pa so bolj zapleteni.
 
 Če želimo primerjati eno besedno vrsto z vsemi drugimi v podatkovnem nizu, je
-pretvorba bolj zapletena, saj moramo podobno kot v Excelu - najprej izračunati
-vsoto za vse besedne vrste, - potem odšteti število zaimkov oz. samostalnikov od
-vsote, - razliko pa upoštevati za tabelo 2x2 za hi kvadrat test.
+pretvorba bolj zapletena, saj moramo - podobno kot v Excelu: 
+- najprej izračunati vsoto za vse besedne vrste, 
+- potem odšteti število zaimkov oz. samostalnikov od vsote, 
+- razliko pa upoštevati za tabelo 2x2 za hi kvadrat test.
 
 ```{r}
-(zaimki = x %>% 
+(zaimki = tom_df %>% 
   group_by(doc_id) %>% 
   count(upos) %>% 
   filter(!is.na(upos),
@@ -993,7 +993,7 @@ vsote, - razliko pa upoštevati za tabelo 2x2 za hi kvadrat test.
   pivot_wider(kategorija, doc_id)
 )
 
-(samostalniki = x %>% 
+(samostalniki = tom_df %>% 
   group_by(doc_id) %>% 
   count(upos) %>% 
   filter(!is.na(upos),
@@ -1009,17 +1009,25 @@ vsote, - razliko pa upoštevati za tabelo 2x2 za hi kvadrat test.
 
 ```
 
-Hi kvadrat testa: - primerjava števila zaimkov nasproti ostalim besednim vrstam,
+Hi kvadrat testa: 
+- primerjava števila zaimkov nasproti ostalim besednim vrstam,
 - primerjava števila samostalnikov nasproti ostalim besednim vrstam.
 
+V obeh primerih spet velja:
+H0 (med vzorcema ni statistično značilne razlike). 
+H1 (vzorca se značilno razlikujeta).
+
 ```{r}
-# izločimo prvi stolpec [, -1], za hi kvadrat test potrebujemo le drugi in tretji stolpec
+# izločimo prvi stolpec [, -1], 
+# saj za hi kvadrat test potrebujemo le številke v drugem in tretjem stolpcu
 chisq.test(zaimki[,-1])
 chisq.test(samostalniki[,-1])
 
 ```
 
-Besedili se razlikujeta glede deleža zaimkov in samostalnikov.
+Statistični izid:
+Deleža zaimkov se v besedilih ne razlikujeta (prvi test potrjuje H0), vendar pa se besedili razlikujeta glede deleža samostalnikov (drugi test potrjuje H1).
+
 
 ## 16.3 Primerjava veznikov
 
@@ -1038,18 +1046,16 @@ stavek, uveden s podrednim veznikom).
 
 ```
 
-Odstotki nakazujejo, da je v romanu Prozess delež prirednih veznikov manjši kot
-v romanu Tom Sawyer.
+Odstotki nakazujejo, da je delež prirednih veznikov v angleškem izvirniku rahlo večji kot v nemškem prevodu.
 
-Hi kvadrat test (upoštevane so le povedi, ki vsebujejo veznik) za preverjanje,
-ali je razlika dovolj velika, da bi bila nenaključna.
+Spet uporabljamo hi kvadrat test (upoštevane so le povedi, ki vsebujejo veznik) za preverjanje, ali je razlika dovolj velika, da bi bila nenaključna.
 
 ```{r}
 chisq.test(vezniki[,c(2:3)])
 
 ```
 
-Razlika med romanoma je statistično značilna.
+Z ozirom na hi kvadrat test razlika med besediloma ni statistično značilna (potrjen je H0).
 
 Če upoštevamo tudi vsote drugih besednih vrst (kot zgoraj):
 
@@ -1076,7 +1082,7 @@ Razlika med romanoma je statistično značilna.
 
 ```
 
-Hi kvadrat preizkus izkazuje razliko med romanoma
+Hi kvadrat preizkus izkazuje razliko med besediloma v primeru prirednih veznikov (potrjen je H1), v primeru podrednih veznikov pa ne (potrjen je H0).
 
 ```{r}
 chisq.test(koord[,-1])
@@ -1084,7 +1090,8 @@ chisq.test(subord[,-1])
 
 ```
 
-Besedili se razlikujeta glede števila veznikov.
+Besedili se razlikujeta glede deleža prirednih veznikov (če jih primerjamo z vsemi drugimi besednimi vrstami).
+
 
 ## 16.4 Slovarske enote
 
@@ -1093,7 +1100,7 @@ koliko slovarskih enot je v besedilih? Katerim besednim vrstam najpogosteje
 pripadajo?
 
 ```{r}
-(tabela2 = x %>% 
+(tabela2 = tom_df %>% 
   group_by(doc_id, upos) %>% 
     filter(!is.na(upos),
            upos != "PUNCT",
@@ -1107,7 +1114,8 @@ pripadajo?
 
 tabela2 %>% 
   # slice_max(order_by = prozent, n=6) %>% 
-  mutate(upos = reorder_within(upos, lemmas, paste("(",100*prozent,"%)"), sep = " ")) %>%
+  mutate(upos = reorder_within(upos, lemmas, 
+                               paste("(",100*prozent,"%)"), sep = " ")) %>%
   ggplot(aes(prozent, upos, fill = upos)) +
   geom_col() +
   facet_wrap(~ doc_id, scales = "free") +
@@ -1117,16 +1125,17 @@ tabela2 %>%
 
 ```
 
+
 ## 16.5 Korelacija besed
 
 Katere besedne pogostnosti se vzporedno povečujejo ali zmanjšujejo (pairwise
-correlation) ? Podobno analizno orodje: Voyant Tools.
+correlation) ? Podobno analizno orodje ima tudi *Voyant Tools*.
 
 ```{r}
 library(widyr)
 
 # pairwise correlation
-(correlations = x %>% 
+correlations = tom_df %>% 
   filter(dep_rel != "punct", dep_rel != "nummod") %>%
   mutate(lemma = tolower(lemma), token = tolower(token),
          lemma = str_trim(lemma), token = str_trim(token)) %>% 
@@ -1138,37 +1147,25 @@ library(widyr)
   filter(Freq > 2) %>% 
   pairwise_cor(lemma, sentence_id, sort = TRUE) %>% 
   filter(correlation < 1 & correlation > 0.3)
-)
+
+head(correlations)
 
 ```
 
-Tom Sawyer: Zaun.
+Tom Sawyer: Becky (dekle, ki je Tomu všeč).
 
 ```{r}
 correlations %>%
-  filter(item1 == "zaun") %>%
+  filter(item1 == "tom") %>%
   mutate(item2 = fct_reorder(item2, correlation)) %>%
   ggplot(aes(item2, correlation, fill = item2)) +
   geom_col(show.legend = F) +
   coord_flip() +
-  labs(title = "What tends to appear with 'Zaun'?",
+  labs(title = "What tends to appear with 'Becky'?",
        subtitle = "Among elements that appeared in at least 2 sentences")
 
 ```
 
-Prozess: Gericht.
-
-```{r}
-correlations %>%
-  filter(item1 == "gericht") %>%
-  mutate(item2 = fct_reorder(item2, correlation)) %>%
-  ggplot(aes(item2, correlation, fill = item2)) +
-  geom_col(show.legend = F) +
-  coord_flip() +
-  labs(title = "What tends to appear with 'Gericht'?",
-       subtitle = "Among elements that appeared in at least 2 sentences")
-
-```
 
 # 17. Sentiment
 
@@ -1184,7 +1181,7 @@ Najprej besedilo s funkcijo *get_sentences()* razcepimo na povedi.
 ```{r}
 library(syuzhet)
 
-tom_v = get_sentences(txt$text[2]) # izberemo drugo besedilo: tom.txt
+tom_v = get_sentences(txt$text[1]) # izberemo prvo besedilo: tom_de.txt
 tom_v = (tom_v[-1]) # tako lahko izločimo prvo vrstico (uredniško pripombo)
 head(tom_v[-1])
 
@@ -1210,7 +1207,7 @@ sentiment1 = cbind(tom_v, tom_values, ntoken(tom_v)) %>%
   rename(words = V3,
          text = tom_v,
          values = tom_values) %>% 
-  mutate(doc_id = "tom.txt") %>% 
+  mutate(doc_id = "tom_de.txt") %>% 
   rowid_to_column(var = "sentence")
 head(sentiment1)
 View(sentiment1)
@@ -1220,15 +1217,15 @@ View(sentiment1)
 Gornje postopke ponovimo za besedilo, ki ga želimo primerjati s prvim.
 
 ```{r}
-prozess_v = get_sentences(txt$text[1]) # izberemo prvo besedilo: prozess.txt
+prozess_v = get_sentences(txt$text[2]) # izberemo drugo besedilo: tom_en.txt
 prozess_v = (prozess_v[-1]) # tako lahko izločimo prvo vrstico (uredniško pripombo)
-prozess_values <- get_sentiment(prozess_v, method = "nrc", language = "german")
+prozess_values <- get_sentiment(prozess_v, method = "nrc", language = "english")
 sentiment2 = cbind(prozess_v, prozess_values, ntoken(prozess_v)) %>% 
   as.data.frame() %>% 
   rename(words = V3,
          text = prozess_v,
          values = prozess_values) %>% 
-  mutate(doc_id = "prozess.txt") %>% 
+  mutate(doc_id = "tom_en.txt") %>% 
   rowid_to_column(var = "sentence")
 head(sentiment2)
 View(sentiment2)
@@ -1245,13 +1242,11 @@ sentiment = rbind(sentiment1, sentiment2) %>% as_tibble() %>%
          words = parse_number(words)) %>%
   select(doc_id, sentence, words, values, text)
 head(sentiment)
-
+tail(sentiment)
 ```
 
-Rezultat: po gornji metodi je povprečje čustvenih vrednosti v romanu "Prozess"
-nekoliko večje kot v romanu "Tom Sawyer". To je v nasprotju z našim
-pričakovanjem, saj Tom Sawyer vsebuje kar nekaj vedrih zgodb, je pa res, da so
-njegove pustolovščine pogosto tudi nevarne ali strašljive.
+Rezultat: po gornji metodi je povprečje čustvenih vrednosti v nemškem prevodu
+rahlo manjše kot v angleškem izvirniku "Tom Sawyer", vendar je razlika tako majhna, da najbrž ne bi bila statistično značilna. Povprečje je v obeh primerih blizu nevtralne vrednosti (tj. 0): Tom Sawyer vsebuje kar nekaj vedrih prigod in dogodivščin, je pa res, da so njegove pustolovščine pogosto tudi nevarne ali strašljive.
 
 ```{r}
 sentiment %>% 
@@ -1260,8 +1255,7 @@ sentiment %>%
 
 ```
 
-Poskusimo drugače: pozitivne, nevtralne in negativne vrednosti obravnajmo ločeno
-in upoštevajmo tudi dolžino povedi.
+Poskusimo še drugače: pozitivne, nevtralne in negativne vrednosti obravnajmo ločeno in upoštevajmo tudi dolžino povedi.
 
 ```{r}
 sentiment1 = sentiment %>% 
@@ -1276,7 +1270,7 @@ sentiment1 %>%
 
 ```
 
-Ta rezultat je skladnejši z našim pričakovanjem.
+Ta rezultat nakazuje, so čustvene vrednosti v nemškem prevodu nekoliko skrajnejše (pozitivne ali negativne) kot v angleškem izvirniku. Zanimivo bi bilo vprašati poznavalca angleškega izvirnika in nemškega prevoda, ali je ob slogovni primerjavi dobil podoben vtis. 
 
 Poglejmo še nekaj povedi, ki so bile ocenjene negativno:
 
@@ -1285,10 +1279,11 @@ sentiment1 %>%
   filter(negative > 0)
 ```
 
+
 ## 17.2 Različica 2
 
 ```{r}
-tom_v = get_sentences(txt$text[2])
+tom_v = get_sentences(txt$text[2]) # angleški izvirnik
 tom_nrc_values = get_nrc_sentiment(tom_v)
 tom_joy_items = which(tom_nrc_values$joy > 0)
 head(tom_v[tom_joy_items], 4)
@@ -1297,9 +1292,10 @@ head(tom_v[tom_joy_items], 4)
 
 ```{r}
 nrc_sentiment = as.data.frame(cbind(tom_v, tom_nrc_values))
-head(nrc_sentiment)
+head(nrc_sentiment) %>% paged_table()
 
 ```
+
 
 ## 17.3 Različica 3
 
@@ -1346,11 +1342,17 @@ bawlr_dict = dictionary(list(positive = list(positive.words), negative = list(ne
 
 ```
 
+Quanteda slovar lahko shranimo na disk.
+
+```{r}
+# jsonlite::write_json(bawlr_dict, "data/quanteda_bawlr_dict.json")
+```
+
 Uporabljamo matriko (dfm) s slovarskimi enotami (lemma), saj slovar bawlr_dict
 vsebujejo le osnovno obliko slovarskih enot.
 
 ```{r}
-matrika_lemmas = dfm(matrika_lem, tolower = TRUE)
+matrika_lemmas = dfm(matrika_lem_de, tolower = TRUE)
 
 result = matrika_lemmas %>% 
   dfm_lookup(bawlr_dict) %>% 
@@ -1369,7 +1371,7 @@ result
 
 ```
 
-Po navadi želimo izračunati skupni sentimentno vrednost. Možnosti je več: npr. -
+Po navadi želimo izračunati skupno sentimentno vrednost. Možnosti je več: npr. -
 odšteti negativne vrednosti od pozitivnih in nato razliko deliti z vsoto obeh
 vrednosti, - odšteti negativne vrednosti od pozitivnih in nato razliko deliti z
 dolžino besedil,
@@ -1381,7 +1383,7 @@ skupno izraženih:
 result = result %>% mutate(sentiment1=(positive - negative) / (positive + negative))
 result = result %>% mutate(sentiment2=(positive - negative) / length)
 result = result %>% mutate(subjektivnost=(positive + negative) / length)
-result
+result %>% paged_table()
 
 ```
 
@@ -1394,7 +1396,7 @@ Prvi korak je ustvarjanje tcorpusa.
 
 ```{r}
 library(corpustools)
-t = create_tcorpus(txt, doc_column="doc_id")
+t = create_tcorpus(txt1, doc_column="doc_id") # izbrali smo le nemški prevod
 
 ```
 
@@ -1418,7 +1420,7 @@ Prikaz barvno označenih besedil v spletnem brskalniku in shranjevanje v obliki
 html datoteke:
 
 ```{r}
-browse_texts(t, scale='sentiment', filename = "sentiment_prozess_tom.html", 
-             header = "Sentiment in Kafkas Prozess und Twains Tom Sawyer")
+browse_texts(t, scale='sentiment', filename = "sentiment_tom.html", 
+             header = "Sentiment in Twains Tom Sawyer")
 
 ```
