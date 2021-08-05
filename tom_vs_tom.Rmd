@@ -4,7 +4,7 @@ author: "Teodor Petrič"
 date: "2021-08-01"
 output: html_document
 editor_options: 
-  chunk_output_type: console #inline
+  chunk_output_type: inline
   markdown: 
     wrap: 72
 ---
@@ -12,6 +12,7 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
 
 # 0. Nameščanje programov (Packages)
 
@@ -38,6 +39,7 @@ Znak \# v programskem bloku (chunk) pomeni, da se ta vrstica ne izvaja. Odstrani
 
 ```
 
+
 # 0. Programi
 
 Najprej moramo zagnati programe, ki jih potrebujemo za načrtovano delo.
@@ -58,6 +60,7 @@ library(syuzhet)
 library(corpustools)
 
 ```
+
 
 # 1. Preberemo besedila
 
@@ -123,8 +126,8 @@ Program quanteda ima dve funkciji za povzemanje osnovnih vrednosti besedil:
 - *textstat_summary()*
 
 ```{r}
-(romanstatistik = textstat_summary(romane)
-)
+romanstatistik = textstat_summary(romane)
+romanstatistik %>% rmarkdown::paged_table() # za lepši izpis v formatu html
 
 ```
 
@@ -134,10 +137,11 @@ Podatke iz povzetka bi lahko uporabili npr. za izračun povprečne dolžine pove
 v besedilih:
 
 ```{r}
+library(rmarkdown)
 romanstatistik %>% 
   select(-tags, -emojis) %>% # izločimo dva prazna stolpca
   group_by(document) %>%
-  mutate(dolzina_povedi = tokens/sents)
+  mutate(dolzina_povedi = tokens/sents) %>% paged_table()
 
 ```
 
@@ -159,14 +163,15 @@ izbranem besedilu ne pojavljajo.
 romanstatistik %>% 
   select(-tags, -emojis, -urls) %>% # izločimo stolpce iz prikaza
   group_by(document) %>%
-  mutate(dolzina_povedi = tokens/sents) %>% 
-  mutate(ttr = types/tokens)
+  mutate(dolzina_povedi = round(tokens/sents, 2)) %>% # zaokroževanje "round()"
+  mutate(ttr = round(types/tokens, 4)) %>% paged_table()
 
 ```
 
 Vrednost slovarske raznolikosti (ttr) je (glede na zmerno dolžino besedila) razmeroma nizka, mogoče znamenje, da je besedilo napisano v vsakdanjem pogovornem slogu.
 
 Program *quanteda* ima za ugotavljanje slovarske raznolikosti (*lexical diversity*) več možnosti, kar zahteva razcepitev besedil na manjše enote, tj. *tokens* (besede, ločila idr.). Za nekatere funkcije moramo ustvariti besedilno matriko (document frequency matrix, *dfm*).
+
 
 # 3. Tokenizacija
 
@@ -181,6 +186,7 @@ besede = tokens(romane)
 head(besede)
 
 ```
+
 
 # 4. Čiščenje
 
@@ -225,6 +231,7 @@ woerter = tokens_select(woerter, pattern = stoplist, selection = "remove",
 
 ```
 
+
 # 5. Kwic
 
 Za sestavo konkordanc ima program quanteda funkcijo *kwic()* (keyword in
@@ -247,7 +254,7 @@ konkordanca = kwic(woerter,
                    window = 10) %>% 
   as_tibble()
 
-head(konkordanca)
+head(konkordanca) %>% paged_table()
 ```
 
 Z ukazom *count()* lahko preštejemo, koliko pojavnic je *kwic()* našel.
@@ -305,62 +312,81 @@ as_tibble(pogostnost) %>%
 
 # 7. Kolokacije
 
-Koleksemi = slovarske enote, ki se sopojavljajo. Kolokacije = jezikovne prvine,
-ki se sopojavljajo.
+*Koleksemi* = slovarske enote, ki se sopojavljajo. 
+*Kolokacije* = jezikovne prvine, ki se sopojavljajo.
 
-Statistična opredelitev: Če se dva izraza (npr. "dober dan") pojavljata bistveno
+*Statistična opredelitev*: Če se dva izraza (npr. "dober dan") pojavljata bistveno
 pogosteje kot neposredna soseda, kakor bi naključno pričakovali, potem ju lahko
 obravnavamo kot kolokacijo.
 
-Jezikoslovna opredelitev: Kolokacija je pomensko povezano zaporedje besed.
+*Jezikoslovna opredelitev*: Kolokacija je pomensko povezano zaporedje besed.
 
-Funkcija textstat_collocations() v programu quanteda.
+Pomembno: za ugotavljanje kolokacij potrebujemo besedni seznam z opcijo *padding = TRUE* ! V besednem seznamu "woerter" smo sicer izločili nezaželene besedne oblike, ampak opcija padding = TRUE namesto izločenih besed vstavi vrzel oz. prazen niz "". Tako program prepreči odkrivanje lažnih kolokacij.
 
-"woerter" je seznam besednih oblik (padding = TRUE !), ki smo ga ustvarili
-zgoraj.
+Funkcija *textstat_collocations()* programa *quanteda* nam bo poiskala (statistično opredeljene) kolokacije. Z opcijo *size* nastavimo, koliko členov naj vsebuje (npr. 2 za dve besedni obliki, 2:3 za dve ali tri besede). Opcija *tolower = TRUE* odpravi razlikovanje med malimi in velikimi črkami. Opcija *minimal_count* določa, kolikšna naj bo najmanjša pogostnost. 
+
+V naslednjih preglednicah so prikazane kolokacije obeh romanov, izvirnika in prevoda.
 
 ```{r}
-coll_2 = textstat_collocations(woerter, size = 2, tolower = TRUE) # naredi male črke !
+coll_2 = textstat_collocations(woerter, # seznma besednih oblik
+                               size = 2, # obseg kolokacije
+                               tolower = TRUE,  # naredi male črke !
+                               min_count = 2) # prag pogostnosti
 head(coll_2)
 
 ```
 
-Kolokacije s tremi členi.
+Tročlenskih kolokacij je precej manj kot dvočlenskih.
 
 ```{r}
-coll_3 = textstat_collocations(woerter, size = 3, tolower = FALSE)
+coll_3 = textstat_collocations(woerter, size = 3, tolower = TRUE, 
+                               min_count = 2)
 head(coll_3)
 
 ```
 
+Program ni našel štričlenskih kolokacij, ki bi se pojavljale vsaj dvakrat. 
+
 ```{r}
-coll_4 = textstat_collocations(woerter, size = 4, tolower = FALSE)
+coll_4 = textstat_collocations(woerter, size = 4, tolower = TRUE, 
+                               min_count = 2)
 head(coll_4)
 
 ```
 
+Seznam vseh kolokacij velikost 2, 3 in 4. V stolpcu *count_nested* program šteje kolokacije, vsebovane v drugi kolokaciji (višjega reda). 
 
-Kolokacija samostalniških izrazov. V nemščini imajo veliko začetnico. Najprej
-bomo sestavili seznam besednih oblik z veliko začetnico (woerter_caps). Potem
-lahko pridobimo seznam kolokacij (coll_caps2).
+```{r}
+coll_2_4 = textstat_collocations(woerter, size = 2:4, tolower = TRUE, 
+                               minimal_count = 2)
+head(coll_2_4)
+
+```
+
+Kolokacija samostalniških izrazov. 
+
+V nemščini imajo samostalniki veliko začetnico. Najprej bomo sestavili seznam besednih oblik z veliko začetnico (woerter_caps). Pri tem nam pomagata *regularni izraz* "^[A-Z]" in opcija *case_insensitive = FALSE*. Potem lahko pridobimo seznam kolokacij (coll_caps2).
 
 Spremenljivki *lambda* in *z* nam povesta, kako značilna je kolokacija v besedilu.
 
+Najprej kolokacije v nemškem prevodu, ki so sestavljene iz besednih oblik z veliko začetnico (poleg lastnih imen tudi splošna imena): 
+
 ```{r}
+# seznam besed z veliko začetnico
 woerter_caps_de = tokens_select(woerter["tom_de.txt"], 
                                 pattern = "^[A-Z]", 
                                 valuetype = "regex", 
                                 case_insensitive = FALSE, 
                                 padding = TRUE)
 
-
+# kolokacije besed z veliko začetnico
 coll_caps2_de = textstat_collocations(woerter_caps_de, size = 2, tolower = FALSE,
                                       min_count = 5)
 head(coll_caps2_de, 10)
 
 ```
 
-V angleškem izvirniku:
+Še kolokacije v angleškem izvirniku, ki so sestavljene le iz lastnih imen:
 
 ```{r}
 woerter_caps_en = tokens_select(woerter["tom_en.txt"], 
@@ -379,88 +405,359 @@ head(coll_caps2_en, 10)
 
 # 8. Lematizacija
 
-Seznam slovarskih enot (lem) lahko naložimo z medmrežja na naš disk.
+*Slovarska enota* (*lema*) je osnovna oblika neke besede (geslo v slovarju): imenovalnik ednine, če gre za samostalniško obliko oz. nedoločnik, če gre za glagolsko obliko itd. 
+
+Seznam slovarskih enot lahko sestavimo sami, bistveno hitreje (čeprav ne brez napak!) pa to opravimo programsko, npr. z *udpipe* ali *spacyr*. 
+
+
+## Lasten seznam
+Seznam slovarskih enot (lem) lahko naložimo z medmrežja na naš disk. 
+
+Tu je prikazan postopek za nemški prevod. Naš *quanteda* korpus vsebuje tudi angleško besedilo, ki ga moramo izločiti, preden začnem lematizacijo nemških besednih oblik.
+
+```{r}
+besede_de = besede["tom_de.txt"]
+```
+
+Če imamo primeren seznam na disku, je postopek za uporabo s korpusom *quanteda* npr. takšen:
+- odpremo datoteko, ki vsebuje seznam lem (npr. z ukazom *read.delim2()* - odvisno od datotečne oblike);
+- za uporabo s korpusom pretvorimo stolpca podatkovnega niza v besedna seznama (tj. *as.character()*);
+- nazadnje zamenjamo besedne oblike z lemami(s funkcijo *token_replace()*). Če ustrezne leme ne najde, obdrži besedno obliko, ki jo je program našel v besedilu.
 
 ```{r}
 # Preberi seznam slovarskih enot in pojavnic z diska
-lemdict = read.delim2("data/lemmatization_de.txt", sep = "\t", encoding = "UTF-8", 
-                      col.names = c("lemma", "word"), stringsAsFactors = F)
+lemdict = read.delim2("data/lemmatization_de.txt", 
+                      sep = "\t", # stolpci so ločeni tabulatorsko
+                      encoding = "UTF-8", # univerzalno kodiranje črk
+                      col.names = c("lemma", "word"), # dodamo imena stolpcev
+                      stringsAsFactors = F) # preberi kot črkovne nize
 
 # Pretvori podatkovna niza v znakovna niza
-lemma = as.character(lemdict$lemma) 
-word = as.character(lemdict$word)
+lemma = as.character(lemdict$lemma) # v tem stolpcu je osnovna oblika besede
+word = as.character(lemdict$word) # v tem stolpcu je ena izmed besednih oblik
 
 # Lematiziraj pojavnice v naših besedilih
-lemmas <- tokens_replace(besede,
-                             pattern = word,
-                             replacement = lemma,
-                             case_insensitive = TRUE, 
-                             valuetype = "fixed")
+lemmas_de <- tokens_replace(besede_de, # seznam nemških besednih oblik (tokens)
+                             pattern = word, # obliko, ki jo želimo zamenjati
+                             replacement = lemma, # zamenjava
+                             case_insensitive = TRUE, # ne glede na začetnico
+                             valuetype = "fixed") # natančno ujemanje oblik
 
-
+lemmas_de # zdaj imamo leme (če je program našel zamenjavo za besedno obliko)
 ```
 
-Ustvarimo matriko s slovarskimi enotami (namesto pojavnic).
+Zdaj ko imamo seznam slovarskih enot, lahko ustvarimo tudi matriko s slovarskimi enotami (namesto s pojavnicami), in sicer z funkcijo *dfm()* tako kot zgoraj.
 
 ```{r}
-matrika_lem = dfm(lemmas, tolower = FALSE) # za zdaj obdržimo velike začetnice
+matrika_lem_de = dfm(lemmas_de, 
+                     tolower = FALSE) # za zdaj obdržimo velike začetnice
 
 # Odstranimo besede, ki jih v vsebinski analizi ne potrebujemo (stopwords)
-matrika_lem = dfm_select(matrika_lem, selection = "remove", pattern = stoplist_de)
-matrika_lem
+matrika_lem_de = dfm_select(matrika_lem_de, 
+                            selection = "remove", 
+                            pattern = stoplist_de)
+matrika_lem_de
 
 ```
+
+
+## Udpipe
+
+### Angleški izvirnik
+
+Lematizacijo angleškega izvirnika bomo opravili s programom *udpipe*, ki je na voljo za številne jezike (tudi slovenščino).
+
+Pred prvo uporabo moramo naložiti model za nemški jezik z interneta.
+
+```{r}
+# install.packages("udpipe)
+library(udpipe)
+language_model <- udpipe_download_model(language = "english")
+
+```
+
+V naslednjem koraku naložimo jezikovni model v pomnilnik.
+
+```{r}
+ud_en <- udpipe_load_model(language_model$file_model)
+
+```
+
+Če je jezikovni model že v naši delovni mapi, download ni potreben, saj ga lahko
+takoj naložimo z diska v pomnilnik.
+
+```{r}
+file_model = "english-ewt-ud-2.5-191206.udpipe"
+ud_en <- udpipe_load_model(file_model)
+
+```
+
+Naslednji korak je *udpipe_annotate()*: program udpipe označuje besedne oblike
+po več merilih. Lematizacijo je le ena izmed nalog, ki jih program opravi.
+
+Udpipe prebere in označuje besedilo takole:
+
+Na začetku je *readtext()* prebral besedila, shranili smo jih pod imenom "txt". Angleški izvirnik smo shranili pod imenom "txt2", besedilo pa je v stolpcu "text".
+
+```{r}
+x <- udpipe_annotate(ud_en, # jezikovni model
+                     x = txt2$text,  # izbran je le angleški izvirnik
+                     trace = TRUE) # sledimo napredku anotacije
+
+```
+
+Pretvorba seznama v podatkovni niz s funkcijo *as.data.frame()*:
+
+```{r}
+# # Alternativno branje angleškega izvirnika
+# # samo drugo besedilo:
+# x <- udpipe_annotate(ud_en, x = txt$text[2], trace = TRUE)
+en_df <- as.data.frame(x)
+head(en_df)
+
+```
+
+### Nemški prevod
+
+Lematizacijo nemškega prevod bomo tokrat opravili s programom *udpipe*.
+
+Pred prvo uporabo moramo naložiti model za nemški jezik z interneta.
+
+```{r}
+# install.packages("udpipe)
+library(udpipe)
+sprachmodell <- udpipe_download_model(language = "german")
+
+```
+
+V naslednjem koraku naložimo jezikovni model v pomnilnik.
+
+```{r}
+ud_de <- udpipe_load_model(sprachmodell$file_model)
+
+```
+
+Če je jezikovni model že v naši delovni mapi, download ni potreben, saj ga lahko
+takoj naložimo z diska v pomnilnik.
+
+```{r}
+file_model = "german-gsd-ud-2.5-191206.udpipe"
+ud_de <- udpipe_load_model(file_model)
+
+```
+
+Naslednji korak je *udpipe_annotate()*: program udpipe označuje besedne oblike
+po več merilih. Lematizacijo je le ena izmed nalog, ki jih program opravi.
+
+Udpipe prebere in označuje besedilo takole:
+
+Na začetku je *readtext()* prebral besedila, shranili smo jih pod imenom "txt". Nemški prevod smo shranili pod imenom "txt1", besedilo pa je v stolpcu "text".
+
+```{r}
+x <- udpipe_annotate(ud_de, # jezikovni model
+                     x = txt1$text,  # izbran je le nemški prevod romana
+                     trace = TRUE) # sledimo napredku anotacije
+
+```
+
+Pretvorba seznama v podatkovni niz s funkcijo *as.data.frame()*:
+
+```{r}
+# # Alternativno branje angleškega izvirnika
+# # samo drugo besedilo:
+# x <- udpipe_annotate(ud_en, x = txt$text[2], trace = TRUE)
+de_df <- as.data.frame(x)
+head(de_df)
+
+```
+
 
 # 9. Besedni oblaček
 
+Besedni oblački so smiseln in razmeroma preprost prikaz najpogostejših besed v besedilu. Največkrat jih uporabljajo za prikaz vsebinsko relevantnih besed. Zato je treba najprej odstraniti funkcijske in druge neprimerne izraze. Še boljši pregled nad vsebino besedila nam besedni oblački dajejo, če uporabljamo slovarske enote (leme) namesto besednih oblik. To še posebej velja v oblikoslovno bogatih jezikih kot sta slovenščino in nemščina.
+
+Podatkovni niz "en_df", ki ga je ustvaril *udpipe*, moramo pripraviti za program *wordcloud2*:
+- izločiti nezaželene izraze,
+- ugotoviti pogostnost besed in
+- omejiti število besed za prikaz v besednem oblačku.
+
 ```{r}
-textplot_wordcloud(matrika_lem, comparison = TRUE, adjust = 0.3, color = c("darkblue","darkgreen"),
-                   max_size = 4, min_size = 0.75, rotation = 0.5, min_count = 30, max_words = 250)
+en_df_ud <- en_df %>% 
+  filter(upos != "PUNCT") %>% # izločimo ločila
+  filter(str_detect(lemma, "^[:alpha:]")) %>% # samo črke, ne simobolov itd.
+  mutate(word = str_to_lower(lemma)) # vse pretvorimo v male črke
 
-```
+# iz besednega senzama naredimo podatkovni niz
+stoplist_eng = as_tibble(stoplist_en) %>% 
+  rename(word = value) # sprememba imena
 
-Lepši oblaček (za obe besedili skupaj).
+# odstranimo nezaželene besede
+en_df_cleaned = en_df_ud %>% 
+  anti_join(stoplist_eng, by = "word")
 
-```{r}
-# install.packages("wordcloud2)
-matrika_lem_prozess = matrika_lem[1,]
+# preštejemo besede in izberemo najpogostejše
+topfeat_en = en_df_cleaned %>% 
+  count(word, sort = TRUE) %>% 
+  head(300) %>% 
+  as_tibble()
 
+# Oblaček
 set.seed(1320)
 library(wordcloud2)
-topfeat <- as.data.frame(topfeatures(matrika_lem_prozess, 100))
-topfeat <- rownames_to_column(topfeat, var = "word")
-wordcloud2(topfeat)
+wordcloud2(topfeat_en)
 
 ```
+
+Oblaček nemških slovarskih enot:
 
 ```{r}
-matrika_lem_tom = matrika_lem[2,]
+de_df_ud <- de_df %>% 
+  filter(upos != "PUNCT") %>% # brez ločil
+  filter(str_detect(lemma, "^[:alpha:]")) %>% # samo črke, ne simobolov itd.
+  mutate(word = str_to_lower(lemma)) # vse pretvorimo v male črke
 
+# iz besednega seznama naredimo podatkovni niz
+stoplist_deu = as_tibble(stoplist_de) %>% rename(word = value)
+
+# odstranimo nezaželene besede
+de_df_cleaned = de_df_ud %>% 
+  anti_join(stoplist_deu, by = "word")
+
+# preštejemo besede, zadnji popravki in izberemo najpogostejše
+topfeat_de = de_df_cleaned %>% 
+  count(word, sort = TRUE) %>% 
+  filter(!str_detect(word, "er\\|es\\|sie")) %>% # izločimo z regularnim izrazom
+  filter(!str_detect(word, "sie\\|sie")) %>% # izločimo z regex
+  mutate(word = str_replace(word, "hucken", "huck")) %>% # popravek !!!
+  head(300) %>% 
+  as_tibble()
+
+# Oblaček
 set.seed(1320)
 library(wordcloud2)
-topfeat <- as.data.frame(topfeatures(matrika_lem_tom, 100))
-topfeat <- rownames_to_column(topfeat, var = "word")
-wordcloud2(topfeat)
+wordcloud2(topfeat_de)
 
 ```
+
+Oblaček angleških slovarskih enot, ki smo jih pridobili s programom *udpipe*, lahko tudi pripravimo za prikaz s funkcijo *textplot_wordcloud()* programa *quanteda*. 
+
+```{r}
+tok_en = en_df_cleaned %>% 
+  select(word) %>% 
+  mutate(word = paste(word, collapse = " ")) %>% 
+  head(1)
+toks_en = tokens(tok_en$word)
+
+matrika_lem_en = dfm(toks_en)
+matrika_lem_en = dfm_select(matrika_lem_en, 
+                            pattern = stoplist_en, 
+                            selection = "remove")
+
+# spremenimo ime (doc_id)
+docnames(matrika_lem_en) <- "tom_en"
+
+textplot_wordcloud(matrika_lem_en, # le nemški prevod
+                   comparison = FALSE, # brez primerjave z drugim besedilom
+                   adjust = 0.025, 
+                   color = c("darkblue","orange","darkgreen"),
+                   max_size = 5, min_size = 0.75, rotation = 0.5, 
+                   min_count = 10, # spodnji prag pogostnosti
+                   max_words = 250) # koliko besed sme biti v oblačku
+
+```
+
+Priprava seznama nemških slovarskih enot, ki smo jih pridobili z *udpipe*, in prikaz s funkcijo textplot_wordcloud().
+
+```{r}
+tok_de = de_df_cleaned %>% 
+  select(word) %>% 
+  mutate(word = paste(word, collapse = " ")) %>% 
+  head(1)
+toks_de = tokens(tok_de$word)
+
+matrika_lem_de = dfm(toks_de)
+matrika_lem_de = dfm_select(matrika_lem_de, 
+                            pattern = c(stoplist_de, "|"), 
+                            selection = "remove")
+
+# spremenimo ime (doc_id)
+docnames(matrika_lem_de) <- "tom_de"
+
+textplot_wordcloud(matrika_lem_de, # le nemški prevod
+                   comparison = FALSE, # brez primerjave z drugim besedilom
+                   adjust = 0.025, 
+                   color = c("darkblue","orange","darkgreen"),
+                   max_size = 5, min_size = 0.75, rotation = 0.5, 
+                   min_count = 10, # spodnji prag pogostnosti
+                   max_words = 250) # koliko besed sme biti v oblačku
+
+```
+
+Združimo matriki s funkcijo *rbind()*.
+
+```{r}
+matrika_lem_de_en = rbind(matrika_lem_de, matrika_lem_en)
+matrika_lem_de_en
+```
+
+Če želimo, lahko matriko pretvorimo v podatkovni niz: 
+
+```{r}
+convert(matrika_lem_de_en, to = "data.frame") %>%
+  write_csv("data/tom_tom_matrika.csv")
+```
+
+
+Primerjalni oblaček nemških in angleških slovarskih enot:
+
+```{r}
+textplot_wordcloud(matrika_lem_de_en, 
+                   comparison = TRUE, # primerjava z drugim besedilom
+                   adjust = 0.025, 
+                   color = c("darkblue","darkgreen"),
+                   max_size = 4, min_size = 0.5, rotation = 0.5, 
+                   min_count = 10, # spodnji prag pogostnosti
+                   max_words = 120) # koliko besed sme biti v oblačku
+
+```
+
 
 # 10. Položaj v besedilu (xray)
 
-Diagram prikazuje, kje v besedilih se pojavlja besedna oblika "frau". Podobno:
+Diagram prikazuje, kje v besedilih se pojavlja določena besedna oblika. Podobno:
 Voyant Tools (MicroSearch).
 
+Za primerjavo so bili izbrani izrazi, ki dandanes niso več nevtralni, temveč bolj ali manj rasistično obarvani ali celo pejorativni.
+
 ```{r}
-kwic_frau = kwic(lemmas, pattern = "frau")
-textplot_xray(kwic_frau)
+kwic_tom = kwic(besede, 
+                 pattern = c("indian*", "injun", # indinaer?
+                             "neg*", "nigg*")) # neger?
+textplot_xray(kwic_tom)
 
 ```
 
+
 # 11. Slovarska raznolikost
+
+Za oceno slovarske raznolikosti besedil je več meril. Najosnovnejša in najbrž najbolj znano je razmerje med številom različnic in pojavnic (TTR). Slaba lastnost tega merila je odvisnost od velikosti besedila.
+
+Program *quanteda* nam s funkcijo *textstat_lexdiv()* pričara celo paleto meril za slovarsko raznolikost (več o njih v pomoči programa).
+
+V spodnji razpredelnici vidimo številke po odstranitvi funkcijskih besed in nekaterih drugih nezaželenih izrazov (stopwords). TTR nemškega prevoda je večji kot tisti za angleški izvirnik, kar bi lahko pomenilo, da vsebuje več oblik.
 
 ```{r}
 textstat_lexdiv(matrika, measure = "all")
 
 ```
+
+V naslednji tabeli vidimo izračun slovarske raznolikosti na osnovi slovarskih enot (namesto različnic).
+
+```{r}
+textstat_lexdiv(matrika_lem_de_en, measure = "all")
+
+```
+
 
 # 12. Podobnost besedil
 
@@ -481,8 +778,7 @@ romane3_dfm = dfm(romane3_toks)
 
 ```
 
-Rezultat: Kafkina novela "Die Verwandlung" je Kafkinemu romanu "Der Prozess"
-nekoliko podobnejša kot Twainov roman "Tom Sawyer".
+Rezultat (ki je bil pričakovan): Kafkina novela "Die Verwandlung" je nemškemu prevoda podobnejši kot angleški izvirnik Twainovega romana "Tom Sawyer". Program očitno ne primerja vsebine besedil, temveč besedne oblike.
 
 ```{r}
 textstat_simil(romane3_dfm, method = "cosine", margin = "documents")
@@ -493,9 +789,10 @@ Podobnost oblik (features).
 
 ```{r}
 # compute some term similarities
-simil1 = textstat_simil(matrika, matrika[, c("Josef", "Tom", "Sawyer", "Huck", "Finn")], 
+simil1 = textstat_simil(matrika, matrika[, c("Tom", "Sawyer", "Huck", "Finn")], 
                          method = "cosine", margin = "features")
 head(as.matrix(simil1), 10)
+tail(as.matrix(simil1), 10)
 
 ```
 
@@ -508,6 +805,7 @@ plot(hclust(as.dist(dist1)))
 
 ```
 
+
 # 13. Ključne besede
 
 Katere besedne oblike lahko uvrstimo med ključne besede, tj. take izraze, ki so
@@ -516,30 +814,31 @@ najbolj značilni za neko besedilo? Program quanteda ima funkcijo
 besedilom (reference).
 
 ```{r}
-key_tom <- textstat_keyness(matrika, target = "tom.txt")
-key_tom
+key_tom_de <- textstat_keyness(matrika, target = "tom_de.txt")
+key_tom_de
 
-key_prozess <- textstat_keyness(matrika, target = "prozess.txt")
-key_prozess
+key_tom_en <- textstat_keyness(matrika, target = "tom_en.txt")
+key_tom_en
 
 ```
 
 ```{r}
-textplot_keyness(key_tom, key_tom$n_target == 1)
-textplot_keyness(key_tom, key_prozess$n_target == 1)
-textplot_keyness(key_tom)
-textplot_keyness(key_prozess)
+textplot_keyness(key_tom_de, key_tom_de$n_target == 1)
+textplot_keyness(key_tom_de, key_tom_en$n_target == 1)
+textplot_keyness(key_tom_de)
+textplot_keyness(key_tom_en)
 
 ```
+
 
 # 14. Razumljivost besedil
 
 Indeksi razumljivosti (readability index) so prirejeni za angleščino, za druge
 jezike veljajo v manjši meri.
 
-Flesch-Indeks: Prozess ima nekoliko nižjo vrednost (52) kot Tom Sawyer (61), kar
-pomeni, da Prozess (zaradi daljših povedi in besed) težje beremo (razumemo), Tom
-Sawyer pa z večjo lahkoto.
+Flesch-Index velja angleška besedila: nižja vrednost nakazuje, da neko besedilo težje beremo (razumemo).
+
+Indeks nemškega prevoda ima nižjo vrednost (61) kot Tom Sawyer (81), kar je lahko povezano (a) z daljšimi povedmi in/ali (b) daljšimi besedami (zloženke v nemščini pišemo kot eno besedo, v angleščini pogosto ne). 
 
 ```{r}
 textstat_readability(romane, measure = c("Flesch", "Flesch.Kincaid", "FOG", "FOG.PSK", "FOG.NRI"))
@@ -548,90 +847,72 @@ textstat_readability(romane, measure = c("Flesch", "Flesch.Kincaid", "FOG", "FOG
 
 # 15. Omrežje sopojavitev (FCM)
 
-Matriko sopojavljanja besednih oblik (FCM) pridobimo v dveh korakih: - najprej
-izberemo seznam izrazov (pattern) iz matrike (dfm), - potem določimo matriko
-sopojavljanja besednih oblik (fcm).
+Matriko sopojavljanja besednih oblik (FCM) pridobimo v dveh korakih: 
+- najprej izberemo seznam izrazov (*pattern*) iz matrike (*dfm()*), 
+- potem določimo matriko sopojavljanja besednih oblik (*fcm()*).
+
+Primer omrežja iz nemškega prevoda:
 
 ```{r}
-dfm_tags <- dfm_select(matrika[2,], pattern = (c("tom", "huck", "*joe", "becky", "tante", "witwe",
-                                                 "polly", "sid", "mary", "thatcher", "höhle", "herz",
-                                                 "*schule", "katze", "geld", "zaun", "piraten",
-                                                 "schatz")))
-toptag <- names(topfeatures(dfm_tags, 50))
-head(toptag)
+dfm_tags_de <- dfm_select(matrika[1,], # tom_de.txt
+                       pattern = (c("tom", "huck", "*joe", "becky", "tante",
+                                    "witwe","polly", "sid", "mary", "thatcher",
+                                    "höhle", "herz","*schule", "katze", "geld",
+                                    "zaun", "piraten","schatz")))
+
+toptag_de <- names(topfeatures(dfm_tags_de, 50))
+head(toptag_de)
 
 ```
 
 ```{r}
 # Construct feature-cooccurrence matrix (fcm) of tags
-fcm_tom <- fcm(matrika[2,]) # besedilo 2 je tom.txt
-head(fcm_tom)
-top_fcm <- fcm_select(fcm_tom, pattern = toptag)
-textplot_network(top_fcm, min_freq = 0.6, edge_alpha = 0.8, edge_size = 5)
+fcm_tom_de <- fcm(matrika[1,]) # besedilo 1 je tom_de.txt
+head(fcm_tom_de)
+
+top_fcm_de <- fcm_select(fcm_tom_de, pattern = toptag_de)
+
+textplot_network(top_fcm_de, 
+                 min_freq = 0.6, 
+                 edge_alpha = 0.8, 
+                 edge_size = 5)
 
 ```
 
 # 16. Slovnična analiza
 
 Za slovnično analizo in lematizacijo besednih oblik lahko uporabljamo posebne
-programe (npr. spacyr ali udpipe).
+programe (npr. *spacyr* ali *udpipe*).
 
-Program udpipe je na voljo za številne jezike, tudi za nemščino in slovenščino.
+Program *udpipe* je na voljo za številne jezike (angleščino, nemščino, slovenščino idr.).
 
-## 16.1 Priprava
+Tu bomo ponovno uporabljali že pridobljena jezikovna modela in podatkovna niza (gl. lematizacijo), ampak tokrat za prikaz enostavnih primerov slovnične analize.
 
-Pred prvo uporabo moramo naložiti model za nemški jezik z interneta.
+## 16.1 Podatkovna niza
+
+Za lažje prepoznavo besedil bomo najprej spremenili imeni v stolpcu "doc_id". Potem bomo podatkovna niza združili. 
 
 ```{r}
-library(udpipe)
-sprachmodell <- udpipe_download_model(language = "german")
+en_df = en_df %>% 
+  mutate(doc_id = str_replace(doc_id, "doc1", "tom_en"))
+
+de_df = de_df %>% 
+  mutate(doc_id = str_replace(doc_id, "doc1", "tom_de"))
+
+tom_df = rbind(en_df, de_df) %>% 
+  mutate(token_id = as.integer(factor(token_id))) %>% 
+  arrange(doc_id, paragraph_id, sentence_id, token_id)
+head(tom_df)
+tail(tom_df)
 
 ```
 
-V naslednjem koraku naložimo jezikovni model v pomnilnik.
+Shranjujemo in nadaljujemo naslednjič.
 
 ```{r}
-udmodel_de <- udpipe_load_model(sprachmodell$file_model)
-
+write_rds(tom_df, "data/tom_df.rds")
 ```
 
-Če je jezikovni model že v naši delovni mapi, download ni potreben, saj ga lahko
-takoj naložimo z diska v pomnilnik.
-
-```{r}
-file_model = "german-gsd-ud-2.5-191206.udpipe"
-udmodel_de <- udpipe_load_model(file_model)
-
-```
-
-Naslednji korak je *udpipe_annotate()*: program udpipe označuje besedne oblike
-po več merilih.
-
-Udpipe prebere in označuje besedilo takole:
-
-```{r}
-# Na začetku je readtext prebral besedila, shranili smo jih v spremenljivki "txt".
-x <- udpipe_annotate(udmodel_de, x = txt$text, trace = TRUE)
-
-# # samo prvo besedilo:
-# x <- udpipe_annotate(udmodel_de, x = txt$text[1], trace = TRUE)
-
-x <- as.data.frame(x)
-
-```
-
-Zgradba podatkovnega niza (structure of data frame):
-
-```{r}
-str(x)
-```
-
-Podatkovni niz ima tako obliko:
-
-```{r}
-x
-
-```
 
 ## 16.2 Primerjava Noun : Pron
 
