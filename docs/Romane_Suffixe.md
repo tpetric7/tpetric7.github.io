@@ -1,8 +1,11 @@
 ---
-title: "Stemming"
+title: "Suffixe und Stemming"
 author: "Teodor Petrič"
 date: "25 7 2021"
-output: html_document
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
 ---
 
 ```{r setup, include=FALSE}
@@ -16,6 +19,10 @@ library(tidyverse)
 library(tidytext)
 library(SnowballC)
 library(readtext)
+library(rmarkdown)
+library(scales)
+library(udpipe)
+library(vecsets)
 
 ```
 
@@ -50,7 +57,7 @@ demodel = udpipe_load_model(model$file_model)
 Die Annotation der Wortformen kann mehrere Minuten dauern, falls es sich um längere Texte handelt.
 
 ```{r}
-x = udpipe_annotate(demodel, novels_txt$text)
+x = udpipe_annotate(demodel, novels_txt$text, trace = TRUE)
 x = as.data.frame(x)
 
 ```
@@ -93,7 +100,8 @@ novels_words = novels_words %>%
   mutate(doc_id = str_replace(doc_id, "doc1", "prozess"),
          doc_id = str_replace(doc_id, "doc2", "tom")) %>% 
   anti_join(stoplist_de, novels_words, by = "word") # möglichst keine Funktionswörter
-head(novels_words, 10)
+head(novels_words, 10) %>% paged_table()
+tail(novels_words, 10) %>% paged_table()
 
 ```
 
@@ -109,7 +117,7 @@ Mit *mutate()* und der *wordStem()*-Funktion fügen wir der Tabelle eine weitere
 ```{r}
 novels_words = novels_words %>% 
   mutate(stamm = wordStem(lemma, language = "de"))
-head(novels_words)
+head(novels_words) %>% paged_table()
 
 ```
 Nun stehen uns die Lemma- und Stammformen zur Verfügung. Der Unterschied zwischen den jeweiligen Formen sollte (meist) Wortbildungsmorpheme (Suffixe) ergeben.
@@ -143,7 +151,7 @@ Das Ergebnis ist nicht perfekt, aber für bestimmte Wortbildungssuffixe brauchba
 ```{r}
 novels_full_words %>% 
   select(doc_id, lemma, stamm, diffs) %>% 
-head(10)
+head(10) %>% paged_table()
 
 ```
 
@@ -181,7 +189,8 @@ novels_full_words %>%
   group_by(doc_id) %>% 
   filter(diffs != "") %>%
   count(diffs) %>% 
-  pivot_wider(names_from = doc_id, values_from = n) 
+  pivot_wider(names_from = doc_id, values_from = n) %>% 
+  paged_table()
 
 ```
 
@@ -200,7 +209,7 @@ novels_diffs = novels_full_words %>%
          tom_pct = tom/tom_total,) %>% 
   select(-prozess_total, -tom_total)
 
-head(novels_diffs)
+head(novels_diffs) %>% paged_table()
 
 ```
 
@@ -248,7 +257,7 @@ chisq.test(lich_tab[,-1])
 Der Chi-Quadrat-Test hat lediglich einen signifikanten Unterschied zwischen den beiden Stichproben "prozess" und "tom" bestätigt, sagt uns aber nicht, in welcher Stichprobe, das Suffix "-lich" verhältnismäßig häufiger vorkommt. Bei dieser Beurteilung helfen uns Prozentzahlen.
 
 ```{r}
-(lichtab2 = novels_full_words %>% 
+lichtab2 = novels_full_words %>% 
   group_by(doc_id) %>% 
   filter(upos == "ADJ") %>% 
   count(diffs == "lich") %>% 
@@ -260,7 +269,8 @@ Der Chi-Quadrat-Test hat lediglich einen signifikanten Unterschied zwischen den 
   mutate(prozess_pct = prozess/prozess_total,
          tom_pct = tom/tom_total,) %>% 
   select(-prozess_total, -tom_total)
-)
+
+lichtab2 %>% paged_table()
 
 ```
 
@@ -281,7 +291,8 @@ novels_full_words %>%
   select(doc_id, lemma, word, upos, diffs) %>%
   group_by(doc_id, lemma, word) %>% 
   filter(upos == "ADJ") %>% 
-  filter(diffs == "lich")
+  filter(diffs == "lich") %>% 
+  paged_table()
 
 ```
 
@@ -293,14 +304,18 @@ novels_full_words %>%
   select(doc_id, lemma, word, upos, diffs) %>% # Auswahl von hier relevanten Spalten
   group_by(doc_id, lemma, word) %>% # Gruppierung nach diesen Merkmalen (Spalten)
   filter(upos == "ADJ") %>% # Auswahl der Wortklasse
-  filter(diffs == "lich" | diffs == "erlich" | diffs == "isch" | diffs == "ig") # Suffixauswahl
+  filter(diffs == "lich" | 
+           diffs == "erlich" | 
+           diffs == "isch" | 
+           diffs == "ig") %>% # Suffixauswahl
+  paged_table()
 
 ```
 
 Von den insgesamt 1370 als (suffigiertes) Adjektiv identifizierten Wortformen (tokens) kommen 847 im "prozess" und 523 in "tom sawyer" vor. Der Anteil der Zustandsbeschreibungen mit Hilfe von suffigierten Adjektiven scheint im ersten Werk größer zu sein als im zuletzt genannten (was wir aber an dieser Stelle nicht mit einem Chi-Quadrat-Test überprüfen wollen).
 
 ```{r}
-(adj_tab = novels_full_words %>% 
+adj_tab = novels_full_words %>% 
   select(doc_id, lemma, upos, diffs) %>%
   group_by(doc_id) %>% 
   filter(upos == "ADJ") %>% 
@@ -311,7 +326,8 @@ Von den insgesamt 1370 als (suffigiertes) Adjektiv identifizierten Wortformen (t
          tom_total = sum(tom, na.rm = TRUE)) %>% 
   mutate(prozess_pct = prozess/prozess_total,
          tom_pct = tom/tom_total)
-)
+
+adj_tab %>% paged_table()
 
 ```
 
@@ -340,7 +356,9 @@ novels_full_words %>%
   add_count(doc_id, name = "total") %>% 
   add_count(diffs) %>% 
   mutate(pct = n/total) %>%
-  pivot_wider(names_from = doc_id, values_from = n) %>% 
-  unnest(c(prozess, tom))
+  pivot_wider(names_from = doc_id, values_from = n, names_repair = "unique") %>% 
+  unnest(c(prozess, tom)) %>% 
+  paged_table()
+
 ```
 

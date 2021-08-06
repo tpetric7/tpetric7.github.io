@@ -27,8 +27,10 @@
 ### Basic NLP tasks
 - [Word and character count, Sentence length](docs/Textzerlegung.md)
 - [Novel comparison](docs/Sawyer_Prozess.md)
+- [Novel original and translation](docs/tom_vs_tom.md)
 - [Using regular expressions](docs/Regex_in_quanteda.md)
 - [Wordformation suffixes](docs/Romane_Suffixe.md)
+- [Wordformation suffixes](Romane_Suffixe.ipynb)
 - [Letter frequency, word length, syllables](docs/Letter_frequency.md)
 - Sentiment Viewer [html](docs/sentiment_prozess_tom.html)
 
