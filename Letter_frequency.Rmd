@@ -17,6 +17,7 @@ library(tidyverse)
 library(tidytext)
 library(scales)
 library(readtext)
+library(rmarkdown)
 # library(qdap) # syllable_count and syllable_sum
 # library(quanteda) # nsyllable(tokens(txt))
 ```
@@ -82,7 +83,8 @@ Mit *count()* können wir die Häufigkeit einer Variable (hier: der Buchstaben) 
 
 ```{r}
 novels_character %>% 
-  count(character, sort = TRUE)
+  count(character, sort = TRUE) %>% 
+  paged_table()
 
 ```
 
@@ -91,7 +93,8 @@ Der tidytext-Tokenizer hat nicht nur Buchstaben, sondern auch Zahlen extrahiert.
 ```{r}
 novels_character %>% 
   filter(str_detect(character, "[:alpha:]")) %>% 
-  count(character, sort = T)
+  count(character, sort = T) %>% 
+  paged_table()
 ```
 
 
@@ -105,7 +108,7 @@ char_freq = novels_character %>%
   filter(!str_detect(character, "é|á")) %>% 
   count(character, sort = T)
 
-char_freq
+char_freq %>% paged_table()
 
 ```
 
@@ -122,7 +125,7 @@ Dazu verwenden wir das Programm (library) *ggplot2*, das im Programmbündel *tid
 
 Das Diagramm zeigt sehr deutlich, dass gewaltige Häufigkeitsunterschiede im deutschen Alphabet bestehen.
 
-```{r}
+```{r out.width=10, out.height=8}
 char_freq %>% 
   mutate(character = fct_reorder(character, n)) %>% # Sortieren nach Frequenz
   ggplot(aes(n, character, fill = character)) +
@@ -133,7 +136,7 @@ char_freq %>%
 
 Eine bessere Vorstellung von den Zahlenverhältnissen erhalten wir, wenn wir die mehrstelligen Zahlenwerte in Prozente umwandeln.
 
-```{r}
+```{r out.width=10, out.height=8}
 library(scales)
 char_freq %>% 
   mutate(Prozent = n / sum(n)) %>% # Umwandlung in Prozente
@@ -152,14 +155,15 @@ Getrennte tabellarische Darstellung für die Texte:
 novels_character %>% 
   group_by(doc_id) %>% 
   count(character, sort = TRUE) %>% 
-  pivot_wider(names_from = doc_id, values_from = n)
+  pivot_wider(names_from = doc_id, values_from = n) %>% 
+  paged_table()
 
 ```
 
 Getrennte graphische Darstellung für die Texte:
 
 
-```{r}
+```{r out.width=10, out.height=8}
 library(scales)
 novels_character %>% 
   group_by(doc_id) %>% 
@@ -188,7 +192,7 @@ vokale = "a|e|i|o|u|ä|ö|ü|y"
 
 Die Vokalliste "vokale" verwenden wir mit den Funktionen *filter()* und *str_detect()*.
 
-```{r}
+```{r out.width=10, out.height=8}
 library(scales)
 char_freq %>% 
   filter(str_detect(character, vokale)) %>% 
@@ -211,7 +215,7 @@ Am häufigsten kommt der Buchstabe "e" in den Romanen vor (fast 45%-iger Anteil 
 Welche Buchstaben, die Konsonanten symbolisieren, kommen am häufigsten vor?
 Zum Filtern verwenden wir wiederum die Vokalliste, dieses Mal allerdings mit Negationszeichen "!".
 
-```{r}
+```{r out.width=10, out.height=8}
 library(scales)
 char_freq %>% 
   filter(!str_detect(character, vokale)) %>% # Negationszeichen, daher Konsonanten beibehalten
@@ -255,7 +259,7 @@ char_freq %>%
 ```
 
 
-```{r}
+```{r out.width=10, out.height=8}
 char_freq %>% 
   mutate(buchstabe = ifelse(str_detect(character, vokale), "Vokal", "Konsonant")) %>% 
   mutate(Prozent = n / sum(n)) %>% 
@@ -279,12 +283,12 @@ Wie viele Silben kommen in den Romanen schätzungsweise vor und wie viele Buchst
 Da wir die Silbenzählfunktion nur ein einziges Mal bemühen, rufen wir sie in der unten sichtbaren Form auf: *nsyllable::nsyllable(buchstabenfolge)*.
 
 ```{r}
-novels_words <- novels %>%
+novels_words = novels %>%
   unnest_tokens(word, text, token = "words", to_lower = TRUE, drop = T) %>% 
   mutate(syllables = nsyllable::nsyllable(as.character(word), language = "en")) %>% 
   mutate(letters = nchar(word))
   
-head(novels_words)
+head(novels_words) %>% paged_table()
 
 ```
 Insgesamt (d.h. kumulativ gesehen) fast 139 Tausend Silben in den Romanen. Diese Zahl bietet einen möglichen Ausgangspunkt für Textvergleiche.
@@ -298,7 +302,7 @@ novels_words %>%
 
 Die meisten Wortformen in den Romanen bestehen aus einer Silbe (fast 60%) oder zwei Silben (fast 30%). Das ist typisch für deutsche Texte. Kurze Funktionswörter (meist eine Silbe) kommen wesentlich häufiger vor als andere Wortklassen (Substantive, Verben, Adjektive, Adverbien).
 
-```{r}
+```{r out.width=10, out.height=8}
 novels_words %>% 
   count(syllables) %>% 
   mutate(Prozent = n / sum(n)) %>% 
@@ -312,7 +316,7 @@ novels_words %>%
 
 Berücksichtig man lediglich distinktive Wortformen (also keine Wortwiederholungen), dann ergibt sich die folgende Verteilung, in der die Zweisilber (mehr als 30%) und Dreisilber (fast 30%) den größten Anteil haben.
 
-```{r}
+```{r out.width=10, out.height=8}
 novels_words %>% 
   distinct(word, .keep_all = T) %>%
   count(syllables) %>% 
@@ -349,7 +353,8 @@ novels_words %>%
   summarise(Avg_Silben = mean(syllables, na.rm = TRUE),
             Stdev_Silben = sd(syllables, na.rm = TRUE),
             Avg_Buchstaben = mean(letters, na.rm = TRUE),
-            Stdev_Buchstaben = sd(letters, na.rm = TRUE))
+            Stdev_Buchstaben = sd(letters, na.rm = TRUE)) %>% 
+  paged_table()
 
 ```
 
@@ -361,7 +366,8 @@ novels_words %>%
   summarise(Avg_Silben = mean(syllables, na.rm = TRUE),
             Stdev_Silben = sd(syllables, na.rm = TRUE),
             Avg_Buchstaben = mean(letters, na.rm = TRUE),
-            Stdev_Buchstaben = sd(letters, na.rm = TRUE))
+            Stdev_Buchstaben = sd(letters, na.rm = TRUE)) %>% 
+  paged_table()
 
 ```
 
@@ -469,7 +475,7 @@ anova(m)
 
 Graphische Darstellung: der Mittelwertunterschied ist gering (nur 0,05 Silben), aber aufgrund der großen Stichproben statistisch signifikant. Der Faktor "title" erklärt nur einen verschwinded kleinen Bruchteil der Mittelwertunterschiede.
 
-```{r}
+```{r out.width=10, out.height=8}
 library(effects)
 allEffects(m)
 plot(allEffects(m))
@@ -479,13 +485,14 @@ plot(allEffects(m))
 Ergebnisse in Tabellenform:
 
 ```{r}
-summary(lm(syllables ~ title, data = novels_words)) %>% tidy()
+summary(lm(syllables ~ title, data = novels_words)) %>% 
+  tidy() %>% paged_table()
 
 ```
 
 Boxplot mit Jitterplot anhand des vollen Datensatzes: der Mittelwert ist hier der Median *median()* (d.h. ein Wert, der genau in der Mitte jeder Stichprobe liegt), das arithmetische Mittel / der Durchschnitt wird hier mit einem roten Quadrat symbolisiert. Der Median liegt in beiden Stichproben beim Wert 1, also weit unter dem jeweiligen Durchschnittswert. Dies zeigt, dass die Wortlängen nicht normalverteilt sind. Der Jitterplot veranschaulicht, dass der "Prozess" über mehr Wortformen mit 6, 7 oder 8 Silben verfügt.
 
-```{r}
+```{r out.width=10, out.height=8}
 novels_words %>% 
   group_by(title) %>% 
   ggplot(aes(title, syllables, fill = title, group = title)) +
@@ -501,7 +508,7 @@ novels_words %>%
 
 Boxplot anhand der zusammengefassten Daten (Durchschnitt, Standardabweichung):
 
-```{r}
+```{r out.width=10, out.height=8}
 df = novels_words %>% 
   group_by(title) %>% 
   summarise(Avg_Silben = mean(syllables, na.rm = TRUE),
@@ -536,11 +543,12 @@ library(quanteda)
 library(quanteda.textstats)
 corp = corpus(novels_txt)
 stats = textstat_summary(corp)
-stats
+
+stats %>% paged_table()
 
 stats %>% 
   group_by(document) %>% 
-  transmute(buchstaben = (chars-puncts)/tokens)
+  transmute(buchstaben = (chars-puncts)/tokens) %>% paged_table()
 
 ```
 
@@ -568,7 +576,9 @@ ngrams_char = ngrams_ch %>%
   rename(cluster = value)
 
 ngrams_char %>% 
-  count(cluster, sort = TRUE)
+  count(cluster, sort = TRUE) %>% 
+  head(10) %>% 
+  paged_table()
 
 ```
 
@@ -586,7 +596,7 @@ novels_words_char <- novels %>%
   unnest_tokens(character, word, token = "characters", to_lower = TRUE, drop = F) %>% 
   mutate(buchstabe = ifelse(str_detect(character, vokale), "Vokal", "Konsonant"))
   
-head(novels_words_char)
+head(novels_words_char) %>% head(10) %>% 
 
 ```
 
