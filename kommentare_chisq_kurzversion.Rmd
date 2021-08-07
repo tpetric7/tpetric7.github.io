@@ -1,0 +1,40 @@
+
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+library(janitor)
+```
+
+
+```{r}
+# Datei laden und die Variablennamen vereinheitlichen
+kommentare = read.delim("data/chisq_kommentare.txt", sep = "\t") %>% 
+  clean_names()
+head(kommentare)
+```
+
+```
+##   neugeschriebener_satz kurzer_kommentar_a ausf_a_lhrlicher_kommentar
+## 1             inkorrekt                 13                         29
+## 2               korrekt                 67                         55
+```
+
+```{r}
+# Chi-Quadrat-Test
+chisq.test(kommentare[,-1])
+```
+
+```
+## 
+## 	Pearson's Chi-squared test with Yates' continuity correction
+## 
+## data:  kommentare[, -1]
+## X-squared = 6.2551, df = 1, p-value = 0.01238
+```
+
+Wir verwerfen H0 und nehmen H1 an: 
+zwischen kurzen und langen Kommentaren besteht ein nicht zufälliger Unterschied.
