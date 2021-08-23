@@ -21,21 +21,27 @@ Namestitev: Če ste program(e) že namestili, lahko preskočite ta korak.
 Znak \# v programskem bloku (chunk) pomeni, da se ta vrstica ne izvaja. Odstrani
 \# če želite program namestiti.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 # # Programe, ki jih še nimate, lahko namestite tudi na ta način (odstranite #):
 # install.packages("readtext")
-# install.packages("quanteda")
-# install.packages("quanteda.textstats")
-# install.packages("quanteda.textplots")
-# install.packages("tidyverse")
-# install.packages("wordcloud2")
-# install.packages("tidytext")
-# install.packages("udpipe")
-# install.packages("janitor")
-# install.packages("scales")
-# install.packages("widyr")
-# install.packages("syuzhet")
-# install.packages("corpustools")
+# ...
+
+## First specify the packages of interest
+packages = c("tidyverse", "quanteda", "quanteda.textplots", 
+             "quanteda.textstats", "wordcloud2", "tidytext", 
+             "udpipe", "janitor", "scales", "widyr", "syuzhet", 
+             "corpustools", "readtext")
+
+## Now load or install&load all
+package.check <- lapply(
+  packages,
+  FUN = function(x) {
+    if (!require(x, character.only = TRUE)) {
+      install.packages(x, dependencies = TRUE)
+      library(x, character.only = TRUE)
+    }
+  }
+)
 
 ```
 

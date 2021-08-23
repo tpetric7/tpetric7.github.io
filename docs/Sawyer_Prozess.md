@@ -3,6 +3,10 @@ title: "Tom Sawyer vs Der Prozess"
 author: "Teodor Petrič"
 date: "2021-5-19"
 output: html_document
+editor_options: 
+  chunk_output_type: console #inline
+  markdown: 
+    wrap: 80
 ---
 
 ```{r setup, include=FALSE}
@@ -11,27 +15,30 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # 0. Nameščanje programov (Packages)
 
-Namestitev:
-Če ste program(e) že namestili, lahko preskočite ta korak.
+Namestitev: Če ste program(e) že namestili, lahko preskočite ta korak.
 
-Znak # v programskem bloku (chunk) pomeni, da se ta vrstica ne izvaja.
-Odstrani # če želite program namestiti.
+Znak \# v programskem bloku (chunk) pomeni, da se ta vrstica ne izvaja. Odstrani
+\# če želite program namestiti.
 
 ```{r}
-# # Programe, ki jih še nimate, lahko namestite tudi na ta način:
+# # Programe, ki jih še nimate, lahko namestite tudi na ta način (odstranite #):
 # install.packages("readtext")
-# install.packages("quanteda")
-# install.packages("quanteda.textstats")
-# install.packages("quanteda.textplots")
-# install.packages("tidyverse")
-install.packages("wordcloud2")
-install.packages("tidytext")
-install.packages("udpipe")
-install.packages("janitor")
-install.packages("scales")
-install.packages("widyr")
-install.packages("syuzhet")
-install.packages("corpustools")
+# ...
+
+## First specify the packages of interest
+packages = c("tidyverse", "quanteda", "quanteda.textplots", 
+             "quanteda.textstats", "wordcloud2", "tidytext", 
+             "udpipe", "janitor", "scales", "widyr", "syuzhet", 
+             "corpustools", "readtext")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
 
 ```
 
@@ -75,7 +82,6 @@ txt = rbind(txt1,txt2)
 
 ```
 
-
 # 2. Ustvarimo korpus
 
 Ustvarimo korpus ali jezikovno gradivo. Ukaz v programu "quanteda" je corpus().
@@ -87,9 +93,8 @@ romane = corpus(txt)
 
 Povzetek:
 
-Program quanteda ima dve funkciji za povzemanje: 
-- summary()
-- textstat_summary()
+Program quanteda ima dve funkciji za povzemanje: - summary() -
+textstat_summary()
 
 ```{r}
 (romanstatistik = textstat_summary(romane)
@@ -97,14 +102,14 @@ Program quanteda ima dve funkciji za povzemanje:
 
 ```
 
-
 ```{r}
 povzetek = summary(romane)
 povzetek
 
 ```
 
-Podatke iz povzetka bi lahko uporabili npr. za izračun povprečne dolžine povedi v besedilih:
+Podatke iz povzetka bi lahko uporabili npr. za izračun povprečne dolžine povedi
+v besedilih:
 
 ```{r}
 povzetek %>% 
@@ -113,13 +118,18 @@ povzetek %>%
 
 ```
 
-Lahko bi tudi izračunali kazalnik slovarske raznolikosti v besedilih, tj. razmerje med različnimi (types) in pojavnicami (tokens), kar se angleščini imenuje "type token ratio" (ttr).
+Lahko bi tudi izračunali kazalnik slovarske raznolikosti v besedilih, tj.
+razmerje med različnimi (types) in pojavnicami (tokens), kar se angleščini
+imenuje "type token ratio" (ttr).
 
-Razlikujemo med slovarskimi enotami (lemma), različnicami (types) in pojavnicami (tokens):
+Razlikujemo med slovarskimi enotami (lemma), različnicami (types) in pojavnicami
+(tokens):
 
-npr. nemški glagol "gehen" je slovarska enota, ki ima več različnic ali oblik (npr. gehe, gehst, geht, gehen, geht, ging, gingst, ... gegangen). 
+npr. nemški glagol "gehen" je slovarska enota, ki ima več različnic ali oblik
+(npr. gehe, gehst, geht, gehen, geht, ging, gingst, ... gegangen).
 
-Pojavnice: nekatere oblike glagola so pogostejše kot druge, nekatere pa se v izbranem besedilu ne pojavljajo.
+Pojavnice: nekatere oblike glagola so pogostejše kot druge, nekatere pa se v
+izbranem besedilu ne pojavljajo.
 
 ```{r}
 povzetek %>% 
@@ -128,12 +138,16 @@ povzetek %>%
 
 ```
 
-Program quanteda ima za ugotavljanje slovarske raznolikosti (lexical diversity) več možnosti, kar zahteva razcepitev besedil na manjše enote, tj. tokens (besede, ločila idr.). Za nekatere funkcije moramo ustvariti besedilno matriko (document frequency matrix, dfm).
-
+Program quanteda ima za ugotavljanje slovarske raznolikosti (lexical diversity)
+več možnosti, kar zahteva razcepitev besedil na manjše enote, tj. tokens
+(besede, ločila idr.). Za nekatere funkcije moramo ustvariti besedilno matriko
+(document frequency matrix, dfm).
 
 # 3. Tokenizacija
 
-Če želimo več izvedeti o besedilih, npr. katere besede se pojavljajo v besedilih, moramo najprej ustvariti seznam besedilnih enot (tj. besed, ločil idr.).
+Če želimo več izvedeti o besedilih, npr. katere besede se pojavljajo v
+besedilih, moramo najprej ustvariti seznam besedilnih enot (tj. besed, ločil
+idr.).
 
 Iz gradiva izvlečemo besedne oblike (npr. s pomočjo presledkov).
 
@@ -157,7 +171,8 @@ head(besede)
 
 Izločimo lahko tudi besede, ki za vsebinsko analizo niso zaželene ("stopwords").
 
-V izbranih besedilih motijo tudi angleške besede, ki niso sestavni del nemških besedil.
+V izbranih besedilih motijo tudi angleške besede, ki niso sestavni del nemških
+besedil.
 
 concatenate = združi: c()
 
@@ -168,8 +183,8 @@ besede = tokens_select(besede, pattern = stoplist_de, selection = "remove")
 
 ```
 
-
-Naslednji seznam bomo uporabljali za ustvarjanje konkordance, tj. seznama sobesedil, v katerem se nahaja iskalni niz (npr. neka beseda).
+Naslednji seznam bomo uporabljali za ustvarjanje konkordance, tj. seznama
+sobesedil, v katerem se nahaja iskalni niz (npr. neka beseda).
 
 ```{r}
 stoplist_en = c("Aligned", "by", "autoalignment", "Source", "Project", 
@@ -182,21 +197,26 @@ woerter = tokens_select(woerter, pattern = stoplist_en, selection = "remove", pa
 
 ```
 
-
 # 5. Kwic
 
-Za sestavo konkordanc ima program quanteda funkcijo *kwic()* (keyword in context).
+Za sestavo konkordanc ima program quanteda funkcijo *kwic()* (keyword in
+context).
 
-Možno je iskati posamezne besede, besedne zveze, uporabljamo pa lahko tudi nadomestne znake (npr. *).
+Možno je iskati posamezne besede, besedne zveze, uporabljamo pa lahko tudi
+nadomestne znake (npr. \*).
 
 ```{r}
 kwic(woerter, pattern = c("Frau", "Herr"))
 
 ```
 
-Konkordanco bomo pretvorili v podatkovno zbirko, tj. *data.frame* ali *tibble()*. Prednost je npr., da tako pridobimo imena stolpcev (tj. spremenljivk).
+Konkordanco bomo pretvorili v podatkovno zbirko, tj. *data.frame* ali
+*tibble()*. Prednost je npr., da tako pridobimo imena stolpcev (tj.
+spremenljivk).
 
-*kwic()* ima več možnosti, npr. "case_insensitive = FALSE" razlikuje med velikimi in malimi črkami. Privzeta vrednost je "TRUE", tj. da tega ne razlikuje (tako kot Excel).
+*kwic()* ima več možnosti, npr. "case_insensitive = FALSE" razlikuje med
+velikimi in malimi črkami. Privzeta vrednost je "TRUE", tj. da tega ne razlikuje
+(tako kot Excel).
 
 ```{r}
 (konkordanca = kwic(woerter, pattern = c("Frau", "Herr"), case_insensitive = FALSE) %>% 
@@ -213,7 +233,8 @@ konkordanca %>%
 
 ```
 
-Poiskati želimo besede s pripono "-in" za samostalnike, ki označujejo ženska osebna imena (npr. Ärztin, Köchin, ...).
+Poiskati želimo besede s pripono "-in" za samostalnike, ki označujejo ženska
+osebna imena (npr. Ärztin, Köchin, ...).
 
 ```{r}
 (konkordanca2 = kwic(woerter, pattern = c("*in"), case_insensitive = FALSE) %>% 
@@ -222,11 +243,15 @@ Poiskati želimo besede s pripono "-in" za samostalnike, ki označujejo ženska 
 
 ```
 
-Žal vsebuje gornji seznam sobesedil veliko besednih oblik, ki niso ženska osebna imena (npr. ein, in, ...). Če želimo natančnejši seznam, moramo iskati na ustreznejši način, npr. z naborom nadomestnih znakov, tako imeovanih *regularnih izrazov* (regular expressions, "regex").
+Žal vsebuje gornji seznam sobesedil veliko besednih oblik, ki niso ženska osebna
+imena (npr. ein, in, ...). Če želimo natančnejši seznam, moramo iskati na
+ustreznejši način, npr. z naborom nadomestnih znakov, tako imeovanih *regularnih
+izrazov* (regular expressions, "regex").
 
-Na portalu **https://regex101.com/** lahko preizkušate in se učite regularnih izrazov.
+Na portalu [**https://regex101.com/**](https://regex101.com/){.uri} lahko
+preizkušate in se učite regularnih izrazov.
 
-Poizvedovanje s pomočjo regularnih izrazov: *in.
+Poizvedovanje s pomočjo regularnih izrazov: \*in.
 
 ```{r}
 (konkordanca2 = kwic(woerter, pattern = "\\A[A-Z][a-z]+[^Eae]in\\b",
@@ -246,9 +271,9 @@ Poizvedovanje s pomočjo regularnih izrazov: *in.
 
 ```
 
-Še drug primer uporabe regularnih izrazov
-Poizvedovanje s pomočjo regex: Manjšalnice / Diminutive (-chen, -lein).
-Katera manjšalna pripona prevladuje: -lein ali -chen ?
+Še drug primer uporabe regularnih izrazov Poizvedovanje s pomočjo regex:
+Manjšalnice / Diminutive (-chen, -lein). Katera manjšalna pripona prevladuje:
+-lein ali -chen ?
 
 ```{r}
 (konkordanca3a = kwic(woerter, "*lein",
@@ -278,7 +303,8 @@ Katera manjšalna pripona prevladuje: -lein ali -chen ?
 
 Poizvedovanje s pomočjo "regex": Frau + Priimek / Ime
 
-Obvezno nastavimo case_insensitive = FALSE, saj naj program razlikuje med velikimi in malimi začetnicami.
+Obvezno nastavimo case_insensitive = FALSE, saj naj program razlikuje med
+velikimi in malimi začetnicami.
 
 ```{r}
 (konkordanca4 <- kwic(woerter, pattern = phrase("\\bFrau\\b ^[A-Z][^[:punct:]]"), 
@@ -288,10 +314,11 @@ Obvezno nastavimo case_insensitive = FALSE, saj naj program razlikuje med veliki
 
 ```
 
-
 # 6. Pogostnost
 
-Besedilno-besedna matrika (dfm) je izhodišče za izračun in grafični prikaz več statističnih količin, npr. tudi pogostnosti besednih oblik v posameznih besedilih:
+Besedilno-besedna matrika (dfm) je izhodišče za izračun in grafični prikaz več
+statističnih količin, npr. tudi pogostnosti besednih oblik v posameznih
+besedilih:
 
 ```{r}
 matrika = dfm(besede, tolower = FALSE) # za zdaj obdržimo velike začetnice
@@ -301,7 +328,8 @@ matrika = dfm_select(matrika, selection = "remove", pattern = stoplist_de)
 matrika
 ```
 
-Program quanteda ima posebno funkcijo, ki sestavi seznam besednih oblik in njihove pogostnosti, tj. textstat_frequency().
+Program quanteda ima posebno funkcijo, ki sestavi seznam besednih oblik in
+njihove pogostnosti, tj. textstat_frequency().
 
 ```{r}
 library(quanteda.textstats)
@@ -326,7 +354,8 @@ pogostnost %>%
 
 ```
 
-Po potrebi lahko seznam besednih pogostnosti oblik razdelimo na dva posebna seznama, in sicer s funkcijo filter().
+Po potrebi lahko seznam besednih pogostnosti oblik razdelimo na dva posebna
+seznama, in sicer s funkcijo filter().
 
 ```{r}
 (pogost_tom = textstat_frequency(matrika, groups = c("prozess.txt", "tom.txt")) %>% 
@@ -420,21 +449,21 @@ glagoli %>%
 
 ```
 
-
 # 7. Kolokacije
 
-Koleksemi = slovarske enote, ki se sopojavljajo.
-Kolokacije = jezikovne prvine, ki se sopojavljajo.
+Koleksemi = slovarske enote, ki se sopojavljajo. Kolokacije = jezikovne prvine,
+ki se sopojavljajo.
 
-Statistična opredelitev:
-Če se dva izraza (npr. "dober dan") pojavljata bistveno pogosteje kot neposredna soseda, kakor bi naključno pričakovali, potem ju lahko obravnavamo kot kolokacijo.
+Statistična opredelitev: Če se dva izraza (npr. "dober dan") pojavljata bistveno
+pogosteje kot neposredna soseda, kakor bi naključno pričakovali, potem ju lahko
+obravnavamo kot kolokacijo.
 
-Jezikoslovna opredelitev:
-Kolokacija je pomensko povezano zaporedje besed.
+Jezikoslovna opredelitev: Kolokacija je pomensko povezano zaporedje besed.
 
 Funkcija textstat_collocations() v programu quanteda.
 
-"woerter" je seznam besednih oblik (padding = TRUE !), ki smo ga ustvarili zgoraj.
+"woerter" je seznam besednih oblik (padding = TRUE !), ki smo ga ustvarili
+zgoraj.
 
 ```{r}
 (coll_2 = textstat_collocations(woerter, size = 2, tolower = TRUE) # naredi male črke !
@@ -450,14 +479,14 @@ Kolokacije s tremi členi.
 
 ```
 
-
 ```{r}
 (coll_4 = textstat_collocations(woerter, size = 4, tolower = FALSE)
 )
 
 ```
 
-Sopomenski vprašalnici "warum" in "wieso: s katerimi besednimi oblikami se sopojavljata?
+Sopomenski vprašalnici "warum" in "wieso: s katerimi besednimi oblikami se
+sopojavljata?
 
 ```{r}
 (warum <- coll_2 %>% 
@@ -470,9 +499,9 @@ Sopomenski vprašalnici "warum" in "wieso: s katerimi besednimi oblikami se sopo
 
 ```
 
-Kolokacija samostalniških izrazov. V nemščini imajo veliko začetnico.
-Najprej bomo sestavili seznam besednih oblik z veliko začetnico (woerter_caps).
-Potem lahko pridobimo seznam kolokacij (coll_caps2).
+Kolokacija samostalniških izrazov. V nemščini imajo veliko začetnico. Najprej
+bomo sestavili seznam besednih oblik z veliko začetnico (woerter_caps). Potem
+lahko pridobimo seznam kolokacij (coll_caps2).
 
 ```{r}
 woerter_caps = tokens_select(woerter, pattern = "^[A-Z]", 
@@ -485,9 +514,11 @@ head(coll_caps2, 100)
 
 ```
 
-Ni smiselno upoštevati "Der + samostalnik" kot kolokacijo, saj se v nemščini velika večina samostalnikov pojavlja s členom.
+Ni smiselno upoštevati "Der + samostalnik" kot kolokacijo, saj se v nemščini
+velika večina samostalnikov pojavlja s členom.
 
-Zato bomo člene "Der, Die, Das" in še nekaj besednih oblik na začetku stavka spremenili v "der, die , das", ....
+Zato bomo člene "Der, Die, Das" in še nekaj besednih oblik na začetku stavka
+spremenili v "der, die , das", ....
 
 ```{r}
 woerter_small = tokens_replace(woerter, 
@@ -505,7 +536,6 @@ coll_caps2 = textstat_collocations(woerter_caps, size = 2, tolower = FALSE, min_
 head(coll_caps2, 100)
 
 ```
-
 
 # 8. Lematizacija
 
@@ -563,7 +593,6 @@ wordcloud2(topfeat)
 
 ```
 
-
 ```{r}
 matrika_lem_tom = matrika_lem[2,]
 
@@ -575,11 +604,10 @@ wordcloud2(topfeat)
 
 ```
 
-
 # 10. Položaj v besedilu (xray)
 
-Diagram prikazuje, kje v besedilih se pojavlja besedna oblika "frau".
-Podobno: Voyant Tools (MicroSearch).
+Diagram prikazuje, kje v besedilih se pojavlja besedna oblika "frau". Podobno:
+Voyant Tools (MicroSearch).
 
 ```{r}
 kwic_frau = kwic(lemmas, pattern = "frau")
@@ -596,7 +624,8 @@ textstat_lexdiv(matrika, measure = "all")
 
 # 12. Podobnost besedil
 
-Ta postopek je bolj zanimiv, če želimo primerjati več besedil. Zato bomo dodali še Kafkino novelo.
+Ta postopek je bolj zanimiv, če želimo primerjati več besedil. Zato bomo dodali
+še Kafkino novelo.
 
 ```{r}
 # odpremo datoteko
@@ -612,7 +641,8 @@ romane3_dfm = dfm(romane3_toks)
 
 ```
 
-Rezultat: Kafkina novela "Die Verwandlung" je Kafkinemu romanu "Der Prozess" nekoliko podobnejša kot Twainov roman "Tom Sawyer".
+Rezultat: Kafkina novela "Die Verwandlung" je Kafkinemu romanu "Der Prozess"
+nekoliko podobnejša kot Twainov roman "Tom Sawyer".
 
 ```{r}
 textstat_simil(romane3_dfm, method = "cosine", margin = "documents")
@@ -638,11 +668,12 @@ plot(hclust(as.dist(dist1)))
 
 ```
 
-
 # 13. Ključne besede
 
-Katere besedne oblike lahko uvrstimo med ključne besede, tj. take izraze, ki so najbolj značilni za neko besedilo? Program quanteda ima funkcijo *textstat_keyness()*:
-ciljno besedilo (target) primerjamo z referenčnim besedilom (reference).
+Katere besedne oblike lahko uvrstimo med ključne besede, tj. take izraze, ki so
+najbolj značilni za neko besedilo? Program quanteda ima funkcijo
+*textstat_keyness()*: ciljno besedilo (target) primerjamo z referenčnim
+besedilom (reference).
 
 ```{r}
 key_tom <- textstat_keyness(matrika, target = "tom.txt")
@@ -661,24 +692,25 @@ textplot_keyness(key_prozess)
 
 ```
 
-
 # 14. Razumljivost besedil
 
-Indeksi razumljivosti (readability index) so prirejeni za angleščino, za druge jezike veljajo v manjši meri.
+Indeksi razumljivosti (readability index) so prirejeni za angleščino, za druge
+jezike veljajo v manjši meri.
 
-Flesch-Indeks: Prozess ima nekoliko nižjo vrednost (52) kot Tom Sawyer (61), kar pomeni, da Prozess (zaradi daljših povedi in besed) težje beremo (razumemo), Tom Sawyer pa z večjo lahkoto.
+Flesch-Indeks: Prozess ima nekoliko nižjo vrednost (52) kot Tom Sawyer (61), kar
+pomeni, da Prozess (zaradi daljših povedi in besed) težje beremo (razumemo), Tom
+Sawyer pa z večjo lahkoto.
 
 ```{r}
 textstat_readability(romane, measure = c("Flesch", "Flesch.Kincaid", "FOG", "FOG.PSK", "FOG.NRI"))
 
 ```
 
-
 # 15. Omrežje sopojavitev (FCM)
 
-Matriko sopojavljanja besednih oblik (FCM) pridobimo v dveh korakih:
-- najprej izberemo seznam izrazov (pattern) iz matrike (dfm),
-- potem določimo matriko sopojavljanja besednih oblik (fcm).
+Matriko sopojavljanja besednih oblik (FCM) pridobimo v dveh korakih: - najprej
+izberemo seznam izrazov (pattern) iz matrike (dfm), - potem določimo matriko
+sopojavljanja besednih oblik (fcm).
 
 ```{r}
 dfm_tags <- dfm_select(matrika[2,], pattern = (c("tom", "huck", "*joe", "becky", "tante", "witwe",
@@ -690,7 +722,6 @@ head(toptag)
 
 ```
 
-
 ```{r}
 # Construct feature-cooccurrence matrix (fcm) of tags
 fcm_tom <- fcm(matrika[2,]) # besedilo 2 je tom.txt
@@ -700,10 +731,10 @@ textplot_network(top_fcm, min_freq = 0.6, edge_alpha = 0.8, edge_size = 5)
 
 ```
 
-
 # 16. Slovnična analiza
 
-Za slovnično analizo in lematizacijo besednih oblik lahko uporabljamo posebne programe (npr. spacyr ali udpipe).
+Za slovnično analizo in lematizacijo besednih oblik lahko uporabljamo posebne
+programe (npr. spacyr ali udpipe).
 
 Program udpipe je na voljo za številne jezike, tudi za nemščino in slovenščino.
 
@@ -724,8 +755,8 @@ udmodel_de <- udpipe_load_model(sprachmodell$file_model)
 
 ```
 
-
-Če je jezikovni model že v naši delovni mapi, download ni potreben, saj ga lahko takoj naložimo z diska v pomnilnik.
+Če je jezikovni model že v naši delovni mapi, download ni potreben, saj ga lahko
+takoj naložimo z diska v pomnilnik.
 
 ```{r}
 file_model = "german-gsd-ud-2.5-191206.udpipe"
@@ -733,8 +764,8 @@ udmodel_de <- udpipe_load_model(file_model)
 
 ```
 
-
-Naslednji korak je *udpipe_annotate()*: program udpipe označuje besedne oblike po več merilih.
+Naslednji korak je *udpipe_annotate()*: program udpipe označuje besedne oblike
+po več merilih.
 
 Udpipe prebere in označuje besedilo takole:
 
@@ -762,10 +793,10 @@ x
 
 ```
 
-
 ## 16.2 Primerjava Noun : Pron
 
-Zdaj lahko začnemo poizvedovati po besednih oblikah, slovarskih enotah in slovničnih kategorijah.
+Zdaj lahko začnemo poizvedovati po besednih oblikah, slovarskih enotah in
+slovničnih kategorijah.
 
 ```{r}
 (tabela = x %>% 
@@ -795,7 +826,6 @@ Izračun deležev v odstotkih:
 
 ```
 
-
 ```{r}
 delezi %>% 
   filter(upos %in% c("NOUN", "PRON"))
@@ -814,14 +844,18 @@ chisq.test(nominal)
 
 ```
 
-Besedili se razlikujeta glede razmerja med samostalniki in zaimki: X^2 (1) = 147,38; p < 0,001.
-Iz gornje tabele pogostnosti je razvidno, da je delež zaimkov v romanu "Prozess" sorazmerno večji kot v romanu "Tom Sawyer". Da bi ugotovili, kaj to pomeni, bi si morali podrobneje ogledati, kateri zaimki in kateri samostalniki bistveno vplivajo na to številčno razmerje. Na splošno velja, da so zaimki manj zanesljiva jezikovna sredstva kot samostalniki, samostalniki pa so bolj zapleteni.
+Besedili se razlikujeta glede razmerja med samostalniki in zaimki: X\^2 (1) =
+147,38; p \< 0,001. Iz gornje tabele pogostnosti je razvidno, da je delež
+zaimkov v romanu "Prozess" sorazmerno večji kot v romanu "Tom Sawyer". Da bi
+ugotovili, kaj to pomeni, bi si morali podrobneje ogledati, kateri zaimki in
+kateri samostalniki bistveno vplivajo na to številčno razmerje. Na splošno
+velja, da so zaimki manj zanesljiva jezikovna sredstva kot samostalniki,
+samostalniki pa so bolj zapleteni.
 
-
-Če želimo primerjati eno besedno vrsto z vsemi drugimi v podatkovnem nizu, je pretvorba bolj zapletena, saj moramo podobno kot v Excelu 
-- najprej izračunati vsoto za vse besedne vrste, 
-- potem odšteti število zaimkov oz. samostalnikov od vsote, 
-- razliko pa upoštevati za tabelo 2x2 za hi kvadrat test.
+Če želimo primerjati eno besedno vrsto z vsemi drugimi v podatkovnem nizu, je
+pretvorba bolj zapletena, saj moramo podobno kot v Excelu - najprej izračunati
+vsoto za vse besedne vrste, - potem odšteti število zaimkov oz. samostalnikov od
+vsote, - razliko pa upoštevati za tabelo 2x2 za hi kvadrat test.
 
 ```{r}
 (zaimki = x %>% 
@@ -854,8 +888,7 @@ Iz gornje tabele pogostnosti je razvidno, da je delež zaimkov v romanu "Prozess
 
 ```
 
-Hi kvadrat testa:
-- primerjava števila zaimkov nasproti ostalim besednim vrstam,
+Hi kvadrat testa: - primerjava števila zaimkov nasproti ostalim besednim vrstam,
 - primerjava števila samostalnikov nasproti ostalim besednim vrstam.
 
 ```{r}
@@ -867,12 +900,13 @@ chisq.test(samostalniki[,-1])
 
 Besedili se razlikujeta glede deleža zaimkov in samostalnikov.
 
-
 ## 16.3 Primerjava veznikov
 
 Primerjati želimo število stavkov s prirednim in podrednim veznikom.
 
-Osnovna domneva je, da priredno zložene povedi (vsebujejo stavek, uveden s prirednim veznikom) lažje razumemo kot podredno zložene povedi (vsebujejo stavek, uveden s podrednim veznikom).
+Osnovna domneva je, da priredno zložene povedi (vsebujejo stavek, uveden s
+prirednim veznikom) lažje razumemo kot podredno zložene povedi (vsebujejo
+stavek, uveden s podrednim veznikom).
 
 ```{r}
 (vezniki = tabela %>% 
@@ -883,9 +917,11 @@ Osnovna domneva je, da priredno zložene povedi (vsebujejo stavek, uveden s prir
 
 ```
 
-Odstotki nakazujejo, da je v romanu Prozess delež prirednih veznikov manjši kot v romanu Tom Sawyer.
+Odstotki nakazujejo, da je v romanu Prozess delež prirednih veznikov manjši kot
+v romanu Tom Sawyer.
 
-Hi kvadrat test (upoštevane so le povedi, ki vsebujejo veznik) za preverjanje, ali je razlika dovolj velika, da bi bila nenaključna.
+Hi kvadrat test (upoštevane so le povedi, ki vsebujejo veznik) za preverjanje,
+ali je razlika dovolj velika, da bi bila nenaključna.
 
 ```{r}
 chisq.test(vezniki[,c(2:3)])
@@ -893,7 +929,6 @@ chisq.test(vezniki[,c(2:3)])
 ```
 
 Razlika med romanoma je statistično značilna.
-
 
 Če upoštevamo tudi vsote drugih besednih vrst (kot zgoraj):
 
@@ -930,12 +965,11 @@ chisq.test(subord[,-1])
 
 Besedili se razlikujeta glede števila veznikov.
 
-
 ## 16.4 Slovarske enote
 
-Program udpipe je vsako besedno obliko dodelil slovarski enoti (lemma).
-Koliko koliko slovarskih enot je v besedilih?
-Katerim besednim vrstam najpogosteje pripadajo?
+Program udpipe je vsako besedno obliko dodelil slovarski enoti (lemma). Koliko
+koliko slovarskih enot je v besedilih? Katerim besednim vrstam najpogosteje
+pripadajo?
 
 ```{r}
 (tabela2 = x %>% 
@@ -962,11 +996,10 @@ tabela2 %>%
 
 ```
 
-
 ## 16.5 Korelacija besed
 
-Katere besedne pogostnosti se vzporedno povečujejo ali zmanjšujejo  (pairwise correlation) ?
-Podobno analizno orodje: Voyant Tools.
+Katere besedne pogostnosti se vzporedno povečujejo ali zmanjšujejo (pairwise
+correlation) ? Podobno analizno orodje: Voyant Tools.
 
 ```{r}
 library(widyr)
@@ -1016,12 +1049,13 @@ correlations %>%
 
 ```
 
-
 # 17. Sentiment
 
-Stopnjo čustvenosti ali emocionalnosti besedila je mogoče določiti s sentimentnim slovarjem.
+Stopnjo čustvenosti ali emocionalnosti besedila je mogoče določiti s
+sentimentnim slovarjem.
 
 ## 17.1 Različica 1
+
 Uporaba nrc leksikona za nemščino (priložen programu syuzhet).
 
 Najprej besedilo s funkcijo *get_sentences()* razcepimo na povedi.
@@ -1035,7 +1069,8 @@ head(tom_v[-1])
 
 ```
 
-Funkcija *get_sentiment()* dodeli besedam v povedih pozitivno (+1), negativno (-1) ali nevtralno (0) čustveno vrednost. Program te vrednosti sešteje. 
+Funkcija *get_sentiment()* dodeli besedam v povedih pozitivno (+1), negativno
+(-1) ali nevtralno (0) čustveno vrednost. Program te vrednosti sešteje.
 
 ```{r}
 tom_values <- get_sentiment(tom_v, method = "nrc", language = "german")
@@ -1044,8 +1079,9 @@ tom_values[100:110]
 
 ```
 
-Povedi, čustvene vrednosti in dolžino povedi povežemo v podatkovni niz. To nam olajšuje oceno, kako uspešna je bila uporaba sentimentnega slovarja v našem besedilu.
-Preimenovali bomo tudi nekaj stolpcev.
+Povedi, čustvene vrednosti in dolžino povedi povežemo v podatkovni niz. To nam
+olajšuje oceno, kako uspešna je bila uporaba sentimentnega slovarja v našem
+besedilu. Preimenovali bomo tudi nekaj stolpcev.
 
 ```{r}
 sentiment1 = cbind(tom_v, tom_values, ntoken(tom_v)) %>% 
@@ -1078,7 +1114,9 @@ View(sentiment2)
 
 ```
 
-S seštevanjem čustvenih vrednosti je mogoče oceniti, katero besedilo ima več pozitivno ocenjenih besed. V ta namen bomo združili podatkovna niza in uredili obliko stolpcev "words" in "values".
+S seštevanjem čustvenih vrednosti je mogoče oceniti, katero besedilo ima več
+pozitivno ocenjenih besed. V ta namen bomo združili podatkovna niza in uredili
+obliko stolpcev "words" in "values".
 
 ```{r}
 sentiment = rbind(sentiment1, sentiment2) %>% as_tibble() %>% 
@@ -1089,7 +1127,10 @@ head(sentiment)
 
 ```
 
-Rezultat: po gornji metodi je povprečje čustvenih vrednosti v romanu "Prozess" nekoliko večje kot v romanu "Tom Sawyer". To je v nasprotju z našim pričakovanjem, saj Tom Sawyer vsebuje kar nekaj vedrih zgodb, je pa res, da so njegove pustolovščine pogosto tudi nevarne ali strašljive. 
+Rezultat: po gornji metodi je povprečje čustvenih vrednosti v romanu "Prozess"
+nekoliko večje kot v romanu "Tom Sawyer". To je v nasprotju z našim
+pričakovanjem, saj Tom Sawyer vsebuje kar nekaj vedrih zgodb, je pa res, da so
+njegove pustolovščine pogosto tudi nevarne ali strašljive.
 
 ```{r}
 sentiment %>% 
@@ -1098,7 +1139,8 @@ sentiment %>%
 
 ```
 
-Poskusimo drugače: pozitivne, nevtralne in negativne vrednosti obravnajmo ločeno in upoštevajmo tudi dolžino povedi.
+Poskusimo drugače: pozitivne, nevtralne in negativne vrednosti obravnajmo ločeno
+in upoštevajmo tudi dolžino povedi.
 
 ```{r}
 sentiment1 = sentiment %>% 
@@ -1113,7 +1155,7 @@ sentiment1 %>%
 
 ```
 
-Ta rezultat je skladnejši z našim pričakovanjem. 
+Ta rezultat je skladnejši z našim pričakovanjem.
 
 Poglejmo še nekaj povedi, ki so bile ocenjene negativno:
 
@@ -1121,8 +1163,6 @@ Poglejmo še nekaj povedi, ki so bile ocenjene negativno:
 sentiment1 %>% 
   filter(negative > 0)
 ```
-
-
 
 ## 17.2 Različica 2
 
@@ -1142,7 +1182,8 @@ head(nrc_sentiment)
 
 ## 17.3 Različica 3
 
-Drugi sentimentni slovarji z medmrežja: npr. BAWLR lahko uporabljamo kot sentimentni slovar.
+Drugi sentimentni slovarji z medmrežja: npr. BAWLR lahko uporabljamo kot
+sentimentni slovar.
 
 ```{r}
 # This lexicons contains values of Emotional valence and arousal ranging from 1 to 5.
@@ -1184,7 +1225,8 @@ bawlr_dict = dictionary(list(positive = list(positive.words), negative = list(ne
 
 ```
 
-Uporabljamo matriko (dfm) s slovarskimi enotami (lemma), saj slovar bawlr_dict vsebujejo le osnovno obliko slovarskih enot.
+Uporabljamo matriko (dfm) s slovarskimi enotami (lemma), saj slovar bawlr_dict
+vsebujejo le osnovno obliko slovarskih enot.
 
 ```{r}
 matrika_lemmas = dfm(matrika_lem, tolower = TRUE)
@@ -1197,7 +1239,8 @@ result
 
 ```
 
-Dodamo lahko skupno dolžino besed, če želimo normalizirati rezultat z ozirom na dolžino besedil.
+Dodamo lahko skupno dolžino besed, če želimo normalizirati rezultat z ozirom na
+dolžino besedil.
 
 ```{r}
 result = result %>% mutate(length=ntoken(matrika_lemmas))
@@ -1205,11 +1248,13 @@ result
 
 ```
 
-Po navadi želimo izračunati skupni sentimentno vrednost. Možnosti je več: npr.
-- odšteti negativne vrednosti od pozitivnih in nato razliko deliti z vsoto obeh vrednosti, 
-- odšteti negativne vrednosti od pozitivnih in nato razliko deliti z dolžino besedil,
+Po navadi želimo izračunati skupni sentimentno vrednost. Možnosti je več: npr. -
+odšteti negativne vrednosti od pozitivnih in nato razliko deliti z vsoto obeh
+vrednosti, - odšteti negativne vrednosti od pozitivnih in nato razliko deliti z
+dolžino besedil,
 
-Izračunamo lahko tudi stopnjo subjektivnosti, tj. koliko čustvenih vrednosti je skupno izraženih:
+Izračunamo lahko tudi stopnjo subjektivnosti, tj. koliko čustvenih vrednosti je
+skupno izraženih:
 
 ```{r}
 result = result %>% mutate(sentiment1=(positive - negative) / (positive + negative))
@@ -1221,7 +1266,8 @@ result
 
 ### Barvno označevanje
 
-Program corpustools barvno označuje besede v besedilih z ozirom na čustvene vrednosti besed v sentimentnem slovarju.
+Program corpustools barvno označuje besede v besedilih z ozirom na čustvene
+vrednosti besed v sentimentnem slovarju.
 
 Prvi korak je ustvarjanje tcorpusa.
 
@@ -1247,11 +1293,11 @@ browse_texts(t, scale='sentiment')
 
 ```
 
-Prikaz barvno označenih besedil v spletnem brskalniku in shranjevanje v obliki html datoteke:
+Prikaz barvno označenih besedil v spletnem brskalniku in shranjevanje v obliki
+html datoteke:
 
 ```{r}
 browse_texts(t, scale='sentiment', filename = "sentiment_prozess_tom.html", 
              header = "Sentiment in Kafkas Prozess und Twains Tom Sawyer")
 
 ```
-
